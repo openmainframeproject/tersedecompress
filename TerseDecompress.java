@@ -1,4 +1,7 @@
-
+/**
+  Copyright Contributors to the TerseDecompress Project.
+  SPDX-License-Identifier: Apache-2.0
+**/
 /*****************************************************************************/
 /* Copyright 2018        IBM Corp.                                           */
 /*                                                                           */
@@ -15,7 +18,8 @@
 /*   limitations under the License.                                          */
 /*****************************************************************************/
 /*                                                                           */
-/*  For problems and requirements contact: clientcenter@de.ibm.com           */
+/*  For problems and requirements please create a GitHub issue               */
+/*  or contact: clientcenter@de.ibm.com                                      */
 /*                                                                           */
 /*****************************************************************************/
 /*                                                                           */
