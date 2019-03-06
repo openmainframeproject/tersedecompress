@@ -59,7 +59,7 @@ How to report problems and get support/help:
 
 If you have a problem / need help with TerseDecompress.java, please create a GitHub issue.
 
-You can also send an email to: clientcenter@de.ibm.com
+You can also send an email to: clientcenter@de.ibm.com or contact us on Slack at https://slack.openmainframeproject.org channel #tersedecompress
 
 Please do not send code changes, but explain in a mail
 
