@@ -1,0 +1,1 @@
+All code contributed to this project adheres to the [Contribution Guidelines for Open Mainframe Project hosted projects](https://github.com/openmainframeproject/tsc/blob/master/process/contribution_guidelines.md)
