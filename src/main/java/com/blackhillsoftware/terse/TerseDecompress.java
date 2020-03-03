@@ -78,10 +78,12 @@ public class TerseDecompress {
     File InputFile;
     FileInputStream InputFileStream;
     BufferedInputStream BufferedStream;
-
+    CompressedInputReader input;
+    
     File OutputFile;
     FileOutputStream OutputFileStream;
     BufferedOutputStream OutputBufferedStream;
+    DecompressedOutputWriter DecompressedOutputWriter;
 
     static final String DetailedHelp = new String(
           "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
@@ -103,13 +105,6 @@ public class TerseDecompress {
     int          XlateTableEbc = 37   ; /* ebcdic code page                         */
     int          XlateTableAsc = 437  ; /* ascii code page                          */
     boolean      XlateTableDef = true ; /* use default ALMCOPY table                */
-    long         OutputPhase   = 0    ; /* position in fixed-length output record   */
-    long         OutputTotal   = 0    ; /* total number of bytes                    */
-    long         RecordLength  = 256  ; /* host perspective record length           */
-
-    int EbcToAsc[] = CodePages.EbcToAscAlmcopy;
-    int AscToEbc[] = CodePages.AscToEbcAlmcopy;
-
 
     /*
      * These appear to be the flags for the terse file header. Some are used by 
@@ -130,8 +125,6 @@ public class TerseDecompress {
     boolean SpackFlag = true;
     boolean DecodeFlag = false;
     boolean EncodeFlag = false; /* true when encoding is selected */
-
-
 
 
     /*
@@ -248,227 +241,10 @@ public class TerseDecompress {
     }
 
 
-
-    /* A list of input masks for use by FilePut() and FileGetRequired */
-    static final int Mask[] = {
-                 0, 
-            0x0001,    0x0002,    0x0004,    0x0008,
-            0x0010,    0x0020,    0x0040,    0x0080,
-            0x0100,    0x0200,    0x0400,    0x0800,
-            0x1000,    0x2000,    0x4000,    0x8000,
-           0x10000,   0x20000,   0x40000,   0x80000,
-          0x100000,  0x200000,  0x400000,  0x800000,
-         0x1000000, 0x2000000, 0x4000000, 0x8000000,
-        0x10000000,0x20000000,0x40000000,0x80000000,
-    };
-
-
-
-    /*
-     *  Read Bits number of bits. Assumes we will never read be asked for more
-     * than 16 bits of data. Returns them in the bottom of the returned int.
-     * If we hit an io exception then we are probably stuffed anyway, as
-     * we shouldn't get an EOF exception from any of the read methods that are used, so 
-     * exit with an error message.
-     * Do need to take account of what happens when we get to the end of the file?
-     */
-
-    long buffer = 0; /*Used as an input buffer*/
-    int index = 0; /*The number of bits currently in buffer*/
-    long temp =0;
-    boolean endOfInput = false;
-    long data;
-    int red=0;
-
-    public int FileGetRequired(int Bits, InputStream stream) {
-
-        try {
-
-            if (index < 16) {
-                /*We have less than 16 bits in the buffer so read in 16 more*/
-                temp = 0;
-                temp = stream.read();
-                red = red +1;
-                if (temp != -1) {
-                    buffer = buffer << 8;
-                    buffer = buffer | (temp & 0xFF);
-                    index = index +8;
-                } else {
-                    endOfInput = true;
-                }
-    
-                temp = 0;
-                temp = stream.read();
-                red = red +1;
-                if (temp != -1) {
-                    buffer = buffer << 8;
-                    buffer = buffer | (temp & 0xFF);
-                    index = index +8;
-                } else {
-                    endOfInput = true;
-                }
-            }
-
-            if (endOfInput && (index < Bits)) {
-                /*  We have reached the end of the file and don't have enough
-                 *  data to satisfy the request
-                 */
-                return 0;
-            }
-
-            data =0;
-            /*Loop until we have filled data with the number of bits requested*/
-            while (Bits > 0) {
-    
-                /*Read in 1 byte into data*/
-                if (Bits >7) {
-                    temp =0;
-                    /*make room in the bottom of data for another byte*/
-                    data = data << 8;
-                    /*take the top byte of buffer*/
-                    temp = 0xFF & (buffer >>> (index-8));
-                    /*copy it into the bottom of data*/
-                    data = data | (temp & 0xFF);
-                    /*update the various numbers*/
-                    index = index -8;
-                    Bits = Bits - 8;
-                }
-    
-                /*Add one bit at at time to the bottom of data*/
-                else if (Bits <8) {
-                    temp = 0;
-                    /*get the top bit of buffer to the bottom of temp*/
-                    temp = buffer & (long)(Mask[index]);
-                    temp = temp >>> (index-1);
-                    /*make space in the bottom of data and insert the new bit*/
-                    data = data <<1;
-                    data = data | temp;
-                    /*Update the input numbers*/
-                    index = index -1;
-                    Bits = Bits - 1;
-                }
-    
-            }
-        } catch (IOException e) {
-            System.err.println("Unable to read from input file. Caught IOException:");
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        return (int)data;
-    }
-
-    
-    /*
-     * Read in 12 bits of data, and put them in the bottom of the returned int
-     */
-
-    int GetBlok(InputStream stream) {
-        return FileGetRequired(12, stream);
-    }
-
-
-
-    /*
-     *  Write Bits number of bits from the bottom of Value to the output file
-     *  This assumes that we are never asked to write more than 16 bits.
-     *  Returns true if the requested number of bits was written, 
-     *  If we catch an exception while writing, exit, as we are stuffed.
-     *  Need to clean up the output file on exceptions
-     *  Uses a global byte OutputValue, and only writes when this is full
-     */
-
-    int OutputValue   = 0    ; /* current output byte   */
-    int OutputMask    = 0x80 ; /* mask to write next bit to                */
-
-    public boolean FilePutRequired (int Bits, int Value, OutputStream stream) {
-        while (Bits > 0) {
-            if ((Bits > 7) && (OutputMask == 0x80)) {
-                OutputValue = ((Value >>> (Bits - 8)) & 0xFF);
-
-                OutputTotal++;
-                try {
-                    stream.write(OutputValue);
-                } catch (IOException e) {
-                    System.err.println("Error while writing to output file: " + OutputFile);
-                    System.err.println(e.getMessage());
-                    e.printStackTrace();
-                    System.exit(1);
-                }
-
-                Bits = Bits - 8;
-
-            } else {
-                if ((Value & Mask[Bits]) != 0) {
-                    OutputValue = OutputValue | OutputMask;
-                }
-                if (OutputMask == 0x01) {
-                    try {
-                        stream.write(OutputValue);
-                    } catch (IOException e) {
-                        System.err.println("Error while writing to output file: " + OutputFile);
-                        System.err.println(e.getMessage());
-                        e.printStackTrace();
-                        System.exit(1);
-                    }
-                } else {
-                    OutputMask = OutputMask >>> 1;
-                }
-                Bits--;
-            }
-        }
-        return true;
-    }
-    
-
-    /* Write a new line to the output file*/
-    /* This only works when a new line is a single /n. Which it may not be on Windows */
-    public void PutNewline(OutputStream stream) {
-        FilePutRequired(8, (int)EOL, stream);
-        return;
-    }
-
-
-    /*
-     * Write some stuff to the output file
-     */
-
-    public void PutChar(int X, OutputStream stream) {
-        if (X == 0) {
-            if (HostFlag && TextFlag && VariableFlag) {
-                PutNewline(stream);
-            }
-        } else {
-            if (HostFlag && TextFlag) {
-                if (VariableFlag) {
-                    if (X == RECORDMARK) {
-                        PutNewline(stream);
-                    } else {
-                        FilePutRequired( 8, EbcToAsc[X-1], stream);
-                    }
-                } else {
-                    FilePutRequired( 8, EbcToAsc[X-1], stream);
-                    OutputPhase++;
-                    if (OutputPhase == RecordLength) {
-                        PutNewline(stream);
-                        OutputPhase = 0;
-                    }
-                }
-            } else {
-                if (X < RECORDMARK) { /* discard record marks */
-                    FilePutRequired( 8, X-1, stream);
-                }
-            }
-        }
-    }
-
-
-
     StackType Stack = new StackType();
 
 
-    public void PutChars(int X, OutputStream outstream) {
+    public void PutChars(int X, DecompressedOutputWriter outstream) throws IOException {
         Stack.Head = 0;
 
         while (true) {
@@ -477,7 +253,7 @@ public class TerseDecompress {
                 Stack.Data[Stack.Head] = Tree[X].Right;
                 X = Tree[X].Left;
             }
-            PutChar( X, outstream);
+            outstream.PutChar( X );
 
             if (Stack.Head > 0) {
                 X = Stack.Data[Stack.Head];
@@ -589,7 +365,7 @@ public class TerseDecompress {
      * the decompressed data to.
      */
 
-    public void Decode1( InputStream stream, OutputStream outstream) {
+    public void decodeSpack( CompressedInputReader input, OutputStream outstream) throws IOException {
 
         if (DEBUG) {
             System.out.println("Text Flag is: " + TextFlag);
@@ -603,19 +379,19 @@ public class TerseDecompress {
             System.out.println("Help Flag is: " + HelpFlag);
         }
 
-
-
+        long RecordLength = 256;
+               
         TreeAvail = 0;
         int N = 0, G = 0, H = 0;
         int H1 = 0, H2 = 0, H3 = 0, H4 = 0, H5 = 0, H6 = 0, H7 = 0;
         if (HostFlag) { /* examine vm header */
-            H1 = FileGetRequired(8, stream); /* terse version */
-            H2 = FileGetRequired(8, stream); /* variable-length record flag */
-            H3 = FileGetRequired(16, stream); /* record length */
-            H4 = FileGetRequired(16, stream); /* filler */
-            H5 = FileGetRequired(16, stream); /* filler */
-            H6 = FileGetRequired(16, stream); /* filler */
-            H7 = FileGetRequired(16, stream); /* filler */
+            H1 = input.FileGetRequired(8); /* terse version */
+            H2 = input.FileGetRequired(8); /* variable-length record flag */
+            H3 = input.FileGetRequired(16); /* record length */
+            H4 = input.FileGetRequired(16); /* filler */
+            H5 = input.FileGetRequired(16); /* filler */
+            H6 = input.FileGetRequired(16); /* filler */
+            H7 = input.FileGetRequired(16); /* filler */
             Utils.AssertString( "Invalid File Header: Terse Version Flag", H1 == 5);
             Utils.AssertString( "Invalid File Header: Fixed/Variable Block Flag", (H2 == 0) || (H2 == 1));
             if (H3 == 0) {
@@ -634,29 +410,31 @@ public class TerseDecompress {
                 RecordLength = (long) H3;
             }
         } else {
-            H1 = FileGetRequired(8, stream); /* terse version */
-            H2 = FileGetRequired(8, stream); /* validation flag 1 */
-            H3 = FileGetRequired(8, stream); /* validation flag 2 */
-            H4 = FileGetRequired(8, stream); /* validation flag 3 */
+            H1 = input.FileGetRequired(8); /* terse version */
+            H2 = input.FileGetRequired(8); /* validation flag 1 */
+            H3 = input.FileGetRequired(8); /* validation flag 2 */
+            H4 = input.FileGetRequired(8); /* validation flag 3 */
             Utils.AssertString( "Invalid File Header: Terse Version Flag"   , (H1 == 1) || (H1 == 7));
             Utils.AssertString( "Invalid File Header: Validation Flag One"  , H2 == 0x89);
             Utils.AssertString( "Invalid File Header: Validation Flag Two"  , H3 == 0x69);
             Utils.AssertString( "Invalid File Header: Validation Flag Three", H4 == 0xA5);
         }
 
+        DecompressedOutputWriter = new DecompressedOutputWriter(outstream, RecordLength, HostFlag, TextFlag, VariableFlag);
+        
         TreeInit();
         Tree[TREESIZE-1].NextCount = NONE;
 
-        H = GetBlok(stream);
-        PutChars( H, outstream);
+        H = input.GetBlok();
+        PutChars( H, DecompressedOutputWriter);
 
         while (H != ENDOFFILE) {
 
-            G = GetBlok(stream);
+            G = input.GetBlok();
             if (TreeAvail == NONE) {
                 LruKill();
             }
-            PutChars(G, outstream);
+            PutChars(G, DecompressedOutputWriter);
             N = GetTreeNode();
             Tree[N].Left = H;
             Tree[N].Right = G;
@@ -674,10 +452,10 @@ public class TerseDecompress {
      * Write the output to the output stream.
      * Assume that both streams are initialized and ready to be read from/written to.
      */
-    public void Decode2(InputStream stream, OutputStream outstream) {
+    public void decodeNonSpack(CompressedInputReader input, OutputStream outstream) throws IOException {
 
         if (DEBUG) {
-            System.out.println("Decode2");
+            System.out.println("decodeNonSpack");
         }
 
         if (DEBUG) {
@@ -692,6 +470,7 @@ public class TerseDecompress {
             System.out.println("Help Flag is: " + HelpFlag);
         }
 
+        long RecordLength = 256;
         
         int  H1 = 0, H2 = 0, H3 = 0, H4 = 0, H5 = 0, H6 = 0, H7 = 0;
         int x = 0, d = 0, y = 0, q = 0, r = 0, e = 0, p = 0, h = 0;
@@ -719,13 +498,14 @@ public class TerseDecompress {
         }
 
 
-        H1 = FileGetRequired(8, stream); /* terse version */
-        H2 = FileGetRequired(8, stream); /* variable-length record flag */
-        H3 = FileGetRequired(16, stream); /* record length */
-        H4 = FileGetRequired(16, stream); /* filler */
-        H5 = FileGetRequired(16, stream); /* filler */
-        H6 = FileGetRequired(16, stream); /* filler */
-        H7 = FileGetRequired(16, stream); /* filler */
+
+        H1 = input.FileGetRequired(8); /* terse version */
+        H2 = input.FileGetRequired(8); /* variable-length record flag */
+        H3 = input.FileGetRequired(16); /* record length */
+        H4 = input.FileGetRequired(16); /* filler */
+        H5 = input.FileGetRequired(16); /* filler */
+        H6 = input.FileGetRequired(16); /* filler */
+        H7 = input.FileGetRequired(16); /* filler */
 
 
         if (DEBUG) {
@@ -759,8 +539,10 @@ public class TerseDecompress {
             RecordLength = (long)H3;
         }
 
+        DecompressedOutputWriter = new DecompressedOutputWriter(outstream, RecordLength, HostFlag, TextFlag, VariableFlag);
+        
         x=0;
-        d = GetBlok(stream);
+        d = input.GetBlok();
 
         while (d != 0) {
             h = 0;
@@ -789,17 +571,17 @@ public class TerseDecompress {
             Forward [0] = h;
             Backward[h] = 0;
             CharExt [x] = d;
-            PutChar(d, outstream);
+            DecompressedOutputWriter.PutChar(d);
             x = y;
             while (p != 0) {
                 e = Father[p];
-                PutChar( CharExt[p], outstream);
+                DecompressedOutputWriter.PutChar( CharExt[p]);
                 Father[p] = d;
                 d = p;
                 p = e;
             }
             Father[y] = d;
-            d = GetBlok(stream);
+            d = input.GetBlok();
         }
 
         return;
@@ -811,7 +593,7 @@ public class TerseDecompress {
      * an error message.
      */
 
-    public void process (String args[]) {
+    public void process (String args[]) throws IOException {
 
         if (args.length == 0 || args.length > 3) {
             System.out.println(DetailedHelp);
@@ -858,6 +640,8 @@ public class TerseDecompress {
             InputFile = new File(args[0]);
             InputFileStream = new FileInputStream(InputFile);
             BufferedStream = new BufferedInputStream(InputFileStream);
+            input = new CompressedInputReader(BufferedStream);
+
 
         } catch (Exception e) {
             System.err.println("Can't open input file: " +InputFile);
@@ -868,7 +652,7 @@ public class TerseDecompress {
             OutputFile = new File(args[1]);
             OutputFileStream = new FileOutputStream(OutputFile);
             OutputBufferedStream = new BufferedOutputStream(OutputFileStream);
-
+ 
         } catch (Exception e) {
             System.err.println("Can't open output file: " +OutputFile);
             System.exit(1);
@@ -887,9 +671,9 @@ public class TerseDecompress {
         System.out.println("Attempting to decompress input file (" +InputFile +") to output file (" +OutputFile +")");
 
         if (!SpackFlag) {
-            Decode2(BufferedStream, OutputBufferedStream);
+            decodeNonSpack(input, OutputBufferedStream);
         } else {
-            Decode1(BufferedStream, OutputBufferedStream);
+            decodeSpack(input, OutputBufferedStream);
         }
 
         try {
@@ -904,12 +688,12 @@ public class TerseDecompress {
 
         System.out.println("Processing completed");
         if (DEBUG) {
-            System.err.println("Read " +red +" bytes");
+            System.err.println("Read " + input.red + " bytes");
         }
 
     }
 
-    public static void main (String args[]) {
+    public static void main (String args[]) throws IOException {
 
         TerseDecompress tersed = new TerseDecompress();
         tersed.process(args);

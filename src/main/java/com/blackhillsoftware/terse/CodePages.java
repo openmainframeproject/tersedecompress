@@ -92,7 +92,21 @@ class CodePages {
     static int EbcToAsc[] = EbcToAscDef;
     static int AscToEbc[] = AscToEbcDef;
     */
-    int EbcToAsc[] = EbcToAscAlmcopy;
-    int AscToEbc[] = AscToEbcAlmcopy;
+    static int EbcToAsc[] = EbcToAscAlmcopy;
+    static int AscToEbc[] = AscToEbcAlmcopy;
+    
+    
+    /* A list of input masks for use by FilePut() and FileGetRequired */
+    static final int Mask[] = {
+                 0, 
+            0x0001,    0x0002,    0x0004,    0x0008,
+            0x0010,    0x0020,    0x0040,    0x0080,
+            0x0100,    0x0200,    0x0400,    0x0800,
+            0x1000,    0x2000,    0x4000,    0x8000,
+           0x10000,   0x20000,   0x40000,   0x80000,
+          0x100000,  0x200000,  0x400000,  0x800000,
+         0x1000000, 0x2000000, 0x4000000, 0x8000000,
+        0x10000000,0x20000000,0x40000000,0x80000000,
+    };
 
 }
