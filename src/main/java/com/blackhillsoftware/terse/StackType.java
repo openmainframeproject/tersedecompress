@@ -10,5 +10,5 @@ package com.blackhillsoftware.terse;
  */
 class StackType {
     int Head;
-    int Data[] = new int[TerseDecompress.STACKSIZE+1];
+    int Data[] = new int[Constants.STACKSIZE+1];
 }

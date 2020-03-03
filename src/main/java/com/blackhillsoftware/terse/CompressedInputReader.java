@@ -86,7 +86,7 @@ class CompressedInputReader
                 else if (Bits <8) {
                     temp = 0;
                     /*get the top bit of buffer to the bottom of temp*/
-                    temp = buffer & (long)(CodePages.Mask[index]);
+                    temp = buffer & (long)(Constants.Mask[index]);
                     temp = temp >>> (index-1);
                     /*make space in the bottom of data and insert the new bit*/
                     data = data <<1;

@@ -1,6 +1,6 @@
 package com.blackhillsoftware.terse;
 
-class CodePages {
+class Constants {
 	
 
     /*
@@ -108,5 +108,45 @@ class CodePages {
          0x1000000, 0x2000000, 0x4000000, 0x8000000,
         0x10000000,0x20000000,0x40000000,0x80000000,
     };
+    
+    /*
+     * These appear to be control parameters to control i/o buffers, stack size etc
+     * and hence will affect how much memory we use. The only ones actually used
+     * in the current implementation are TreeSize and RecordMark
+     */
+    static final int  STACKSIZE = 0x07FF;     /* 2k - 1 */
+    static final int  BUFFERSIZE = 0x07FF;    /* 2k - 1 */
+    static final int  HASHSIZE = 0x0FFF;      /* 4k - 1 */
+    static final int  TREESIZE = 0x1000;      /* 4k     */
+    static final int  RECORDMARK = 257;       /*used in the file output functions*/
+
+    /*
+    Some Used in the unspack algorithm. I guess tuning affects the
+    way which compression/decompression works
+    Others are just useful constants
+    */
+    static final int BASE = 0;
+    static final int CODESIZE = 257; /* 2**8+1, EOF, 256 Codepoints, RCM */
+    static final int ENDOFFILE =0;
+    /* This is the new line char that we write into the file. Not sure how
+     * this will translate on the various platforms
+     */
+    static final char EOL = '\n';
+
+    /*Useful Constants*/
+    static final int NONE = -1;
+    
+    /*
+     * These appear to be the flags for the terse file header. Some are used by 
+     * CheckHeader() others are only used when writing a compressed file which
+     * this implementation doesn't do.
+     */
+    static final int  FLAGUNDEF = 0x80;       /*  \                                                    */
+    static final int  FLAGCC1   = 0x40;       /*   \                                               */
+    static final int  FLAGCC2   = 0x20;       /*    \                                              */
+    static final int  FLAGVBS   = 0x10;       /*     >-- values of Flags bits in HeaderRecord type */
+    static final int  FLAGVS    = 0x08;         /*    /                                              */
+    static final int  FLAGMVS   = 0x04;      /*   /                                               */
+    static final int  FLAGRBITS = 0x03;       /*  /                                                */
 
 }

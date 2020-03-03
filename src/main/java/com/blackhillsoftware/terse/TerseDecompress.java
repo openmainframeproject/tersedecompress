@@ -40,40 +40,12 @@ import java.io.*;
 
 public class TerseDecompress {
 
-    static final boolean DEBUG = false;  /* Control output of debug messages */
+    private static final boolean DEBUG = false;  /* Control output of debug messages */
 
-    /*
-     * These appear to be control parameters to control i/o buffers, stack size etc
-     * and hence will affect how much memory we use. The only ones actually used
-     * in the current implementation are TreeSize and RecordMark
-     */
-    static final int  STACKSIZE = 0x07FF;     /* 2k - 1 */
-    static final int  BUFFERSIZE = 0x07FF;    /* 2k - 1 */
-    static final int  HASHSIZE = 0x0FFF;      /* 4k - 1 */
-    static final int  TREESIZE = 0x1000;      /* 4k     */
-    static final int  RECORDMARK = 257;       /*used in the file output functions*/
-
-    /*
-    Some Used in the unspack algorithm. I guess tuning affects the
-    way which compression/decompression works
-    Others are just useful constants
-    */
-    static final int BASE = 0;
-    static final int CODESIZE = 257; /* 2**8+1, EOF, 256 Codepoints, RCM */
-    static final int ENDOFFILE =0;
-    /* This is the new line char that we write into the file. Not sure how
-     * this will translate on the various platforms
-     */
-    static final char EOL = '\n';
-
-    /*Useful Constants*/
-    static final int NONE = -1;
-     
-
-    int [] Father = new int[TREESIZE];
-    int [] CharExt = new int[TREESIZE];
-    int [] Backward = new int[TREESIZE];
-    int [] Forward = new int[TREESIZE];
+    private int [] Father = new int[Constants.TREESIZE];
+    private int [] CharExt = new int[Constants.TREESIZE];
+    private int [] Backward = new int[Constants.TREESIZE];
+    private int [] Forward = new int[Constants.TREESIZE];
 
     File InputFile;
     FileInputStream InputFileStream;
@@ -85,7 +57,7 @@ public class TerseDecompress {
     BufferedOutputStream OutputBufferedStream;
     DecompressedOutputWriter DecompressedOutputWriter;
 
-    static final String DetailedHelp = new String(
+    private static final String DetailedHelp = new String(
           "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
          +"Java TerseDecompress will decompress a file compressed using the terse program on z/OS\n"
          +"Default mode is text mode, which will attempt ebcdic -> ASCII conversion\n"
@@ -93,38 +65,25 @@ public class TerseDecompress {
          +"Please mail comments/suggestions to: clientcenter@de.ibm.com\n"
         );
 
-    static final String Version = new String ("version 4, December 2018");
+    private static final String Version = new String ("version 4, December 2018");
 
 
-    boolean      ExamineFlag   = false; /* display contents of tersed file header   */
-    boolean      FixedFlag     = false; /* host compatibility fixed block length    */
-    boolean      HelpFlag      = false; /* true when extended help is requested     */
-    boolean      InfoFlag      = false; /* true when statistics are requested       */
-    boolean      QuietFlag     = false; /* true when quiet is selected              */
-    boolean      VariableFlag  = true ; /* true for variable-length records         */
-    int          XlateTableEbc = 37   ; /* ebcdic code page                         */
-    int          XlateTableAsc = 437  ; /* ascii code page                          */
-    boolean      XlateTableDef = true ; /* use default ALMCOPY table                */
-
-    /*
-     * These appear to be the flags for the terse file header. Some are used by 
-     * CheckHeader() others are only used when writing a compressed file which
-     * this implementation doesn't do.
-     */
-    static final int  FLAGUNDEF = 0x80;       /*  \                                                    */
-    static final int  FLAGCC1   = 0x40;       /*   \                                               */
-    static final int  FLAGCC2   = 0x20;       /*    \                                              */
-    static final int  FLAGVBS   = 0x10;       /*     >-- values of Flags bits in HeaderRecord type */
-    static final int  FLAGVS    = 0x08;         /*    /                                              */
-    static final int  FLAGMVS   = 0x04;      /*   /                                               */
-    static final int  FLAGRBITS = 0x03;       /*  /                                                */
-    
+    private boolean      ExamineFlag   = false; /* display contents of tersed file header   */
+    private boolean      FixedFlag     = false; /* host compatibility fixed block length    */
+    private boolean      HelpFlag      = false; /* true when extended help is requested     */
+    private boolean      InfoFlag      = false; /* true when statistics are requested       */
+    private boolean      QuietFlag     = false; /* true when quiet is selected              */
+    private boolean      VariableFlag  = true ; /* true for variable-length records         */
+    private int          XlateTableEbc = 37   ; /* ebcdic code page                         */
+    private int          XlateTableAsc = 437  ; /* ascii code page                          */
+    private boolean      XlateTableDef = true ; /* use default ALMCOPY table                */
+   
     /*Defaults for dump types*/
-    boolean TextFlag = true;
-    boolean HostFlag = true;
-    boolean SpackFlag = true;
-    boolean DecodeFlag = false;
-    boolean EncodeFlag = false; /* true when encoding is selected */
+    private boolean TextFlag = true;
+    private boolean HostFlag = true;
+    private boolean SpackFlag = true;
+    private boolean DecodeFlag = false;
+    private boolean EncodeFlag = false; /* true when encoding is selected */
 
 
     /*
@@ -132,7 +91,7 @@ public class TerseDecompress {
      * associated with it.
      */
 
-    public boolean CheckHeader(File InFile) {
+    private boolean CheckHeader(File InFile) {
 
         TerseHeader Header = new TerseHeader();
 
@@ -188,7 +147,7 @@ public class TerseDecompress {
                 return false;
             if ( (Header.RecordLen1 == 0) ^  (Header.RecordLen2 != 0))
                 return false;
-            if ((Header.Flags & FLAGMVS) == 0) {
+            if ((Header.Flags & Constants.FLAGMVS) == 0) {
                 if (    Header.Flags != 0) return false;
                 if (    Header.Ratio != 0) return false;
                 if (Header.BlockSize != 0) return false;
@@ -203,7 +162,7 @@ public class TerseDecompress {
                 return false;
             if (  (Header.RecordLen1 == 0) ^  (Header.RecordLen2 != 0) )
                 return false;
-            if ((Header.Flags & FLAGMVS) == 0) {
+            if ((Header.Flags & Constants.FLAGMVS) == 0) {
                 if ( Header.Flags != 0)
                     return false;
                 if ( Header.Ratio != 0)
@@ -244,11 +203,11 @@ public class TerseDecompress {
     StackType Stack = new StackType();
 
 
-    public void PutChars(int X, DecompressedOutputWriter outstream) throws IOException {
+    private void PutChars(int X, DecompressedOutputWriter outstream) throws IOException {
         Stack.Head = 0;
 
         while (true) {
-            while (X > CODESIZE) {
+            while (X > Constants.CODESIZE) {
                 Stack.Head++;
                 Stack.Data[Stack.Head] = Tree[X].Right;
                 X = Tree[X].Left;
@@ -265,34 +224,34 @@ public class TerseDecompress {
     }
 
 
-    int TreeAvail;
+    private int TreeAvail;
 
-    TreeRecord Tree[] = new TreeRecord[TREESIZE+1];
+    private TreeRecord Tree[] = new TreeRecord[Constants.TREESIZE+1];
 
 
-    public void TreeInit() {
+    private void TreeInit() {
 
         for (int i =0; i < Tree.length; i ++) {
             Tree[i] = new TreeRecord();
         }
 
-        int init_index = BASE;
-        while (init_index <= CODESIZE) {
-            Tree[init_index].Left  = NONE;
+        int init_index = Constants.BASE;
+        while (init_index <= Constants.CODESIZE) {
+            Tree[init_index].Left  = Constants.NONE;
             Tree[init_index].Right = init_index++;
         }
-        for (init_index = CODESIZE+1; init_index <= TREESIZE-1; init_index++) {
+        for (init_index = Constants.CODESIZE+1; init_index <= Constants.TREESIZE-1; init_index++) {
             Tree[init_index].NextCount  = init_index+1;
-            Tree[init_index].Left  = NONE;
-            Tree[init_index].Right = NONE;
+            Tree[init_index].Left  = Constants.NONE;
+            Tree[init_index].Right = Constants.NONE;
         }
-        Tree[TREESIZE].NextCount = NONE;
-        Tree[BASE].NextCount = BASE;
-        Tree[BASE].Back = BASE;
-        for (init_index = 1; init_index <= CODESIZE; init_index++) {
-            Tree[init_index].NextCount = NONE;
+        Tree[Constants.TREESIZE].NextCount = Constants.NONE;
+        Tree[Constants.BASE].NextCount = Constants.BASE;
+        Tree[Constants.BASE].Back = Constants.BASE;
+        for (init_index = 1; init_index <= Constants.CODESIZE; init_index++) {
+            Tree[init_index].NextCount = Constants.NONE;
         }
-        TreeAvail = CODESIZE+1;
+        TreeAvail = Constants.CODESIZE+1;
     }
 
 
@@ -301,9 +260,9 @@ public class TerseDecompress {
      * The precise use of all of them is unknown!!
      */
 
-    int lru_p = 0, lru_q = 0, lru_r = 0;
+    private int lru_p = 0, lru_q = 0, lru_r = 0;
 
-    public void LruKill() {
+    private void LruKill() {
         lru_p = Tree[0].NextCount;
         lru_q = Tree[lru_p].NextCount;
         lru_r = Tree[lru_p].Back;
@@ -315,7 +274,7 @@ public class TerseDecompress {
         TreeAvail = lru_p;
     }
 
-    public void DeleteRef(int dref) {
+    private void DeleteRef(int dref) {
         if (Tree[dref].NextCount == -1) {
             LruAdd(dref);
         } else {
@@ -324,29 +283,29 @@ public class TerseDecompress {
     }
 
 
-    int lru_back=0;
+    private int lru_back=0;
 
-    public void LruAdd(int lru_next) {
-        lru_back = Tree[BASE].Back;
-        Tree[lru_next].NextCount = BASE;
-        Tree[BASE].Back = lru_next;
+    private void LruAdd(int lru_next) {
+        lru_back = Tree[Constants.BASE].Back;
+        Tree[lru_next].NextCount = Constants.BASE;
+        Tree[Constants.BASE].Back = lru_next;
         Tree[lru_next].Back = lru_back;
         Tree[lru_back].NextCount = lru_next;
     }
 
 
-    int node =0;
+    private int node =0;
 
-    public int GetTreeNode() {
+    private int GetTreeNode() {
         node = TreeAvail;
         TreeAvail = Tree[node].NextCount;
         return node;
     }
 
 
-    int forwards = 0, prev = 0;
+    private int forwards = 0, prev = 0;
 
-    public void BumpRef(int bref) {
+    private void BumpRef(int bref) {
         if (Tree[bref].NextCount < 0) {
             Tree[bref].NextCount--;
         } else {
@@ -365,7 +324,7 @@ public class TerseDecompress {
      * the decompressed data to.
      */
 
-    public void decodeSpack( CompressedInputReader input, OutputStream outstream) throws IOException {
+    private void decodeSpack( CompressedInputReader input, OutputStream outstream) throws IOException {
 
         if (DEBUG) {
             System.out.println("Text Flag is: " + TextFlag);
@@ -423,15 +382,15 @@ public class TerseDecompress {
         DecompressedOutputWriter = new DecompressedOutputWriter(outstream, RecordLength, HostFlag, TextFlag, VariableFlag);
         
         TreeInit();
-        Tree[TREESIZE-1].NextCount = NONE;
+        Tree[Constants.TREESIZE-1].NextCount = Constants.NONE;
 
         H = input.GetBlok();
         PutChars( H, DecompressedOutputWriter);
 
-        while (H != ENDOFFILE) {
+        while (H != Constants.ENDOFFILE) {
 
             G = input.GetBlok();
-            if (TreeAvail == NONE) {
+            if (TreeAvail == Constants.NONE) {
                 LruKill();
             }
             PutChars(G, DecompressedOutputWriter);
@@ -452,7 +411,7 @@ public class TerseDecompress {
      * Write the output to the output stream.
      * Assume that both streams are initialized and ready to be read from/written to.
      */
-    public void decodeNonSpack(CompressedInputReader input, OutputStream outstream) throws IOException {
+    private void decodeNonSpack(CompressedInputReader input, OutputStream outstream) throws IOException {
 
         if (DEBUG) {
             System.out.println("decodeNonSpack");
@@ -475,11 +434,11 @@ public class TerseDecompress {
         int  H1 = 0, H2 = 0, H3 = 0, H4 = 0, H5 = 0, H6 = 0, H7 = 0;
         int x = 0, d = 0, y = 0, q = 0, r = 0, e = 0, p = 0, h = 0;
 
-        H2 = 1 + CodePages.AscToEbcDef[' '];
+        H2 = 1 + Constants.AscToEbcDef[' '];
 
         for (H1 = 258; H1 < 4096; H1++) {
           Father [H1] = H2;
-          CharExt[H1] = 1 + CodePages.AscToEbcDef[' '];
+          CharExt[H1] = 1 + Constants.AscToEbcDef[' '];
           H2 = H1;
         }
 
@@ -593,7 +552,7 @@ public class TerseDecompress {
      * an error message.
      */
 
-    public void process (String args[]) throws IOException {
+    private void process (String args[]) throws IOException {
 
         if (args.length == 0 || args.length > 3) {
             System.out.println(DetailedHelp);

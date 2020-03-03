@@ -28,7 +28,7 @@ class DecompressedOutputWriter
     /* Write a new line to the output file*/
     /* This only works when a new line is a single /n. Which it may not be on Windows */
     public void PutNewline() throws IOException {
-        FilePutRequired(8, (int)TerseDecompress.EOL);
+        FilePutRequired(8, (int)Constants.EOL);
         return;
     }
 
@@ -45,13 +45,13 @@ class DecompressedOutputWriter
         } else {
             if (HostFlag && TextFlag) {
                 if (VariableFlag) {
-                    if (X == TerseDecompress.RECORDMARK) {
+                    if (X == Constants.RECORDMARK) {
                         PutNewline();
                     } else {
-                        FilePutRequired( 8, CodePages.EbcToAsc[X-1]);
+                        FilePutRequired( 8, Constants.EbcToAsc[X-1]);
                     }
                 } else {
-                    FilePutRequired( 8, CodePages.EbcToAsc[X-1]);
+                    FilePutRequired( 8, Constants.EbcToAsc[X-1]);
                     OutputPhase++;
                     if (OutputPhase == RecordLength) {
                         PutNewline();
@@ -59,7 +59,7 @@ class DecompressedOutputWriter
                     }
                 }
             } else {
-                if (X < TerseDecompress.RECORDMARK) { /* discard record marks */
+                if (X < Constants.RECORDMARK) { /* discard record marks */
                     FilePutRequired( 8, X-1);
                 }
             }
@@ -89,7 +89,7 @@ class DecompressedOutputWriter
                 Bits = Bits - 8;
 
             } else {
-                if ((Value & CodePages.Mask[Bits]) != 0) {
+                if ((Value & Constants.Mask[Bits]) != 0) {
                     OutputValue = OutputValue | OutputMask;
                 }
                 if (OutputMask == 0x01) {
