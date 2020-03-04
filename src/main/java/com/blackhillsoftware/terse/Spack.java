@@ -1,0 +1,166 @@
+package com.blackhillsoftware.terse;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+class Spack {
+	
+    private int node =0;
+
+    private int TreeAvail;
+
+    private TreeRecord Tree[] = new TreeRecord[Constants.TREESIZE+1];
+
+    StackType Stack = new StackType();
+
+
+    private void PutChars(int X, DecompressedOutputWriter outstream) throws IOException {
+        Stack.Head = 0;
+
+        while (true) {
+            while (X > Constants.CODESIZE) {
+                Stack.Head++;
+                Stack.Data[Stack.Head] = Tree[X].Right;
+                X = Tree[X].Left;
+            }
+            outstream.PutChar( X );
+
+            if (Stack.Head > 0) {
+                X = Stack.Data[Stack.Head];
+                Stack.Head--;
+            } else
+                break;
+        }
+
+    }
+    
+    private void TreeInit() {
+
+        for (int i =0; i < Tree.length; i ++) {
+            Tree[i] = new TreeRecord();
+        }
+
+        int init_index = Constants.BASE;
+        while (init_index <= Constants.CODESIZE) {
+            Tree[init_index].Left  = Constants.NONE;
+            Tree[init_index].Right = init_index++;
+        }
+        for (init_index = Constants.CODESIZE+1; init_index <= Constants.TREESIZE-1; init_index++) {
+            Tree[init_index].NextCount  = init_index+1;
+            Tree[init_index].Left  = Constants.NONE;
+            Tree[init_index].Right = Constants.NONE;
+        }
+        Tree[Constants.TREESIZE].NextCount = Constants.NONE;
+        Tree[Constants.BASE].NextCount = Constants.BASE;
+        Tree[Constants.BASE].Back = Constants.BASE;
+        for (init_index = 1; init_index <= Constants.CODESIZE; init_index++) {
+            Tree[init_index].NextCount = Constants.NONE;
+        }
+        TreeAvail = Constants.CODESIZE+1;
+    }
+    
+    private int GetTreeNode() {
+        node = TreeAvail;
+        TreeAvail = Tree[node].NextCount;
+        return node;
+    }
+
+
+    private int forwards = 0, prev = 0;
+
+    private void BumpRef(int bref) {
+        if (Tree[bref].NextCount < 0) {
+            Tree[bref].NextCount--;
+        } else {
+            forwards = Tree[bref].NextCount;
+            prev = Tree[bref].Back;
+            Tree[prev].NextCount = forwards;
+            Tree[forwards].Back = prev;
+            Tree[bref].NextCount = -1;
+        }
+    }
+    
+
+    /*
+     * The following methods are all used by the spack decode algorithm
+     * The precise use of all of them is unknown!!
+     */
+
+    private int lru_p = 0, lru_q = 0, lru_r = 0;
+
+    private void LruKill() {
+        lru_p = Tree[0].NextCount;
+        lru_q = Tree[lru_p].NextCount;
+        lru_r = Tree[lru_p].Back;
+        Tree[lru_q].Back = lru_r;
+        Tree[lru_r].NextCount = lru_q;
+        DeleteRef(Tree[lru_p].Left);
+        DeleteRef(Tree[lru_p].Right);
+        Tree[lru_p].NextCount = TreeAvail;
+        TreeAvail = lru_p;
+    }
+
+    private void DeleteRef(int dref) {
+        if (Tree[dref].NextCount == -1) {
+            LruAdd(dref);
+        } else {
+            Tree[dref].NextCount++;
+        }
+    }
+
+
+    private int lru_back=0;
+
+    private void LruAdd(int lru_next) {
+        lru_back = Tree[Constants.BASE].Back;
+        Tree[lru_next].NextCount = Constants.BASE;
+        Tree[Constants.BASE].Back = lru_next;
+        Tree[lru_next].Back = lru_back;
+        Tree[lru_back].NextCount = lru_next;
+    }
+	
+    /*
+     * Decode logic for a file compressed with the spack algorithm
+     * Inputstream should wrap the compressed data, outputstream is where we write
+     * the decompressed data to.
+     */
+
+    void decodeSpack(TerseHeader header, CompressedInputReader input, OutputStream outstream) throws IOException {
+
+        if (TerseDecompress.DEBUG) {
+            System.out.println("Text Flag is: " + header.TextFlag);
+            System.out.println("Host Flag is: " + header.HostFlag);
+            System.out.println("Spack Flag is: " + header.SpackFlag);
+            System.out.println("Variable Flag is: " + header.VariableFlag);
+        }
+               
+        TreeAvail = 0;
+        int N = 0, G = 0, H = 0;
+
+        DecompressedOutputWriter writer = new DecompressedOutputWriter(header, outstream);
+        
+        TreeInit();
+        Tree[Constants.TREESIZE-1].NextCount = Constants.NONE;
+
+        H = input.GetBlok();
+        PutChars( H , writer);
+
+        while (H != Constants.ENDOFFILE) {
+
+            G = input.GetBlok();
+            if (TreeAvail == Constants.NONE) {
+                LruKill();
+            }
+            PutChars(G, writer);
+            N = GetTreeNode();
+            Tree[N].Left = H;
+            Tree[N].Right = G;
+            BumpRef(H);
+            BumpRef(G);
+            LruAdd(N);
+            H = G;
+        }
+
+    }
+
+}

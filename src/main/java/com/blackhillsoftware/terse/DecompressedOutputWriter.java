@@ -15,13 +15,13 @@ class DecompressedOutputWriter
     long         OutputTotal   = 0    ; /* total number of bytes                    */
     long         RecordLength; /* host perspective record length           */
 	
-	public DecompressedOutputWriter(OutputStream outstream, long RecordLength, boolean HostFlag, boolean TextFlag, boolean VariableFlag)
+	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream)
 	{
 		this.stream = outstream;
-		this.RecordLength = RecordLength;
-		this.HostFlag = HostFlag; 
-		this.TextFlag = TextFlag;
-		this.VariableFlag = VariableFlag;
+		this.RecordLength = header.RecordLength;
+		this.HostFlag = header.HostFlag; 
+		this.TextFlag = header.TextFlag;
+		this.VariableFlag = header.RecfmV;
 	}
 	
 	
