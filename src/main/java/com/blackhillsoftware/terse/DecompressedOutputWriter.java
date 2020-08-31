@@ -15,6 +15,8 @@ class DecompressedOutputWriter
     long         OutputTotal   = 0    ; /* total number of bytes                    */
     long         RecordLength; /* host perspective record length           */
 	
+    byte[] lineseparator = System.lineSeparator().getBytes();
+    
 	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream)
 	{
 		this.stream = outstream;
@@ -26,9 +28,8 @@ class DecompressedOutputWriter
 	
 	
     /* Write a new line to the output file*/
-    /* This only works when a new line is a single /n. Which it may not be on Windows */
     public void PutNewline() throws IOException {
-    	stream.write((int)Constants.EOL);
+    	stream.write(lineseparator);
         return;
     }
 
