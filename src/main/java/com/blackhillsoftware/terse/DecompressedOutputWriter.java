@@ -28,7 +28,7 @@ class DecompressedOutputWriter
     /* Write a new line to the output file*/
     /* This only works when a new line is a single /n. Which it may not be on Windows */
     public void PutNewline() throws IOException {
-        FilePutRequired(8, (int)Constants.EOL);
+    	stream.write((int)Constants.EOL);
         return;
     }
 
@@ -48,10 +48,10 @@ class DecompressedOutputWriter
                     if (X == Constants.RECORDMARK) {
                         PutNewline();
                     } else {
-                        FilePutRequired( 8, Constants.EbcToAsc[X-1]);
+                    	stream.write(Constants.EbcToAsc[X-1]);
                     }
                 } else {
-                    FilePutRequired( 8, Constants.EbcToAsc[X-1]);
+                	stream.write(Constants.EbcToAsc[X-1]);
                     OutputPhase++;
                     if (OutputPhase == RecordLength) {
                         PutNewline();
@@ -60,49 +60,9 @@ class DecompressedOutputWriter
                 }
             } else {
                 if (X < Constants.RECORDMARK) { /* discard record marks */
-                    FilePutRequired( 8, X-1);
+                	stream.write(X-1);
                 }
             }
         }
     }
-	
-    /*
-     *  Write Bits number of bits from the bottom of Value to the output file
-     *  This assumes that we are never asked to write more than 16 bits.
-     *  Returns true if the requested number of bits was written, 
-     *  If we catch an exception while writing, exit, as we are stuffed.
-     *  Need to clean up the output file on exceptions
-     *  Uses a global byte OutputValue, and only writes when this is full
-     */
-
-    int OutputValue   = 0    ; /* current output byte   */
-    int OutputMask    = 0x80 ; /* mask to write next bit to                */
-
-    public boolean FilePutRequired (int Bits, int Value) throws IOException {
-        while (Bits > 0) {
-            if ((Bits > 7) && (OutputMask == 0x80)) {
-                OutputValue = ((Value >>> (Bits - 8)) & 0xFF);
-
-                OutputTotal++;
-                stream.write(OutputValue);
-
-                Bits = Bits - 8;
-
-            } else {
-                if ((Value & Constants.Mask[Bits]) != 0) {
-                    OutputValue = OutputValue | OutputMask;
-                }
-                if (OutputMask == 0x01) {
-                        stream.write(OutputValue);
-
-                } else {
-                    OutputMask = OutputMask >>> 1;
-                }
-                Bits--;
-            }
-        }
-        return true;
-    }
-    
-
 }
