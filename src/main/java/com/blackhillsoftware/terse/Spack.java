@@ -142,23 +142,49 @@ class Spack {
         TreeInit();
         Tree[Constants.TREESIZE-1].NextCount = Constants.NONE;
 
+        // Testing showed that SPACK wrote an extra newline at the end of a VB text file,
+        // compared to PACK.
+        // On investigation, I found that the SPACK code passed the 0x000 end of file
+        // marker to PutChars and thence to PutChar.
+        // If the file is host LRECL=V and text format, PutChar writes a newline character
+        // when the argument is zero. In all other cases, the zero argument is ignored and
+        // nothing is written.
+        // PACK does not pass the end of file marker to PutChar hence the different output.
+        
+        // Rearranged the loop and end of file testing so that SPACK does not send the 
+        // EOF to PutChars.
+        
+        // However, the additional newline as written by SPACK might be the more correct
+        // format. Should all lines of a text file be terminated by an end of line character?
+        // That seems to be how e.g. FTP does it. If so we probably want to write the newline,
+        // but write it from both PACK and SPACK - probably when closing the writer.
+        
+        // Terse will not process an empty file so we probably don't have to distinguish
+        // between an empty file and 1 record with no data. 
+        
         H = input.GetBlok();
-        PutChars( H , writer);
 
-        while (H != Constants.ENDOFFILE) {
-
+        if (H != Constants.ENDOFFILE)
+        {
+	        PutChars( H , writer);
             G = input.GetBlok();
-            if (TreeAvail == Constants.NONE) {
-                LruKill();
-            }
-            PutChars(G, writer);
-            N = GetTreeNode();
-            Tree[N].Left = H;
-            Tree[N].Right = G;
-            BumpRef(H);
-            BumpRef(G);
-            LruAdd(N);
-            H = G;
+
+        	while (G != Constants.ENDOFFILE) {
+	            
+	        	if (TreeAvail == Constants.NONE) {
+	                LruKill();
+	            }
+	        	
+                PutChars(G, writer);
+	            N = GetTreeNode();
+	            Tree[N].Left = H;
+	            Tree[N].Right = G;
+	            BumpRef(H);
+	            BumpRef(G);
+	            LruAdd(N);
+	            H = G;
+	            G = input.GetBlok();	    
+	        }
         }
 
     }
