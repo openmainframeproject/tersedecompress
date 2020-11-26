@@ -1,7 +1,6 @@
 package com.blackhillsoftware.terse;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 class Spack {
 	
@@ -125,7 +124,7 @@ class Spack {
      * the decompressed data to.
      */
 
-    void decodeSpack(TerseHeader header, CompressedInputReader input, OutputStream outstream) throws IOException {
+    void decodeSpack(TerseHeader header, CompressedInputReader input, DecompressedOutputWriter writer) throws IOException {
 
         if (TerseDecompress.DEBUG) {
             System.out.println("Text Flag is: " + header.TextFlag);
@@ -136,9 +135,7 @@ class Spack {
                
         TreeAvail = 0;
         int N = 0, G = 0, H = 0;
-
-        DecompressedOutputWriter writer = new DecompressedOutputWriter(header, outstream);
-        
+       
         TreeInit();
         Tree[Constants.TREESIZE-1].NextCount = Constants.NONE;
 

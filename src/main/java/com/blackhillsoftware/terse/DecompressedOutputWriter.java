@@ -1,17 +1,19 @@
 package com.blackhillsoftware.terse;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-class DecompressedOutputWriter 
+class DecompressedOutputWriter implements AutoCloseable
 {
-	OutputStream stream;
+	DataOutputStream stream;
+	ByteArrayOutputStream record;
 	
 	boolean HostFlag; 
 	boolean TextFlag;
 	boolean VariableFlag;
 	
-    long         OutputPhase   = 0    ; /* position in fixed-length output record   */
     long         OutputTotal   = 0    ; /* total number of bytes                    */
     long         RecordLength; /* host perspective record length           */
 	
@@ -19,51 +21,82 @@ class DecompressedOutputWriter
     
 	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream)
 	{
-		this.stream = outstream;
+		this.stream = new DataOutputStream(outstream);
+		this.record = new ByteArrayOutputStream();
 		this.RecordLength = header.RecordLength;
 		this.HostFlag = header.HostFlag; 
 		this.TextFlag = header.TextFlag;
 		this.VariableFlag = header.RecfmV;
 	}
 	
-	
     /* Write a new line to the output file*/
-    public void PutNewline() throws IOException {
-    	stream.write(lineseparator);
-        return;
+    public void endRecord() throws IOException 
+    {
+    	if (VariableFlag && !TextFlag)
+    	{
+    		// write a RDW
+    		int recordlength = record.size() + 4;
+    		int rdw = recordlength << 16;
+    		stream.writeInt(rdw);
+    	}
+    	
+    	stream.write(record.toByteArray());
+    	record.reset();
+    	
+    	if (TextFlag)
+    	{
+    		stream.write(lineseparator);
+    	}    		
     }
 
-
     /*
-     * Write some stuff to the output file
+     * Write some stuff to the output record
      */
 
     public void PutChar(int X) throws IOException {
         if (X == 0) {
             if (HostFlag && TextFlag && VariableFlag) {
-                PutNewline();
+                endRecord();
             }
         } else {
             if (HostFlag && TextFlag) {
                 if (VariableFlag) {
                     if (X == Constants.RECORDMARK) {
-                        PutNewline();
+                        endRecord();
                     } else {
-                    	stream.write(Constants.EbcToAsc[X-1]);
+                    	record.write(Constants.EbcToAsc[X-1]);
                     }
                 } else {
-                	stream.write(Constants.EbcToAsc[X-1]);
-                    OutputPhase++;
-                    if (OutputPhase == RecordLength) {
-                        PutNewline();
-                        OutputPhase = 0;
+                	record.write(Constants.EbcToAsc[X-1]);
+                    if (record.size() == RecordLength) {
+                        endRecord();
                     }
                 }
-            } else {
-                if (X < Constants.RECORDMARK) { /* discard record marks */
-                	stream.write(X-1);
+            } 
+            else 
+            {
+                if (X == Constants.RECORDMARK) 
+                {
+                	if (VariableFlag)
+                	{
+                		endRecord();
+                	}
+                	/* else discard record marks */
+                }
+                else
+                {
+                	record.write(X-1);
                 }
             }
         }
     }
+
+	@Override
+	public void close() throws Exception {
+		if (record.size() > 0)
+		{
+			endRecord();
+		}
+		this.stream.close();
+	}
 }

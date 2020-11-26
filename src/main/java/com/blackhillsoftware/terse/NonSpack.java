@@ -1,7 +1,6 @@
 package com.blackhillsoftware.terse;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 class NonSpack {
 		
@@ -10,7 +9,7 @@ class NonSpack {
      * Write the output to the output stream.
      * Assume that both streams are initialized and ready to be read from/written to.
      */
-    static void decodeNonSpack(TerseHeader header, CompressedInputReader input, OutputStream outstream) throws IOException {
+    static void decodeNonSpack(TerseHeader header, CompressedInputReader input, DecompressedOutputWriter writer) throws IOException {
 
         int [] Father = new int[Constants.TREESIZE];
         int [] CharExt = new int[Constants.TREESIZE];
@@ -57,8 +56,6 @@ class NonSpack {
             System.out.println("Have read header info again.");
             System.out.println("h1 is " +H1 +" h2 is " +H2 +" h3 is " +H3 +" h4 is " +H4 +" h5 is " +H5 +" h6 is " +H6 +" h7 is " +H7);
         }
-
-        DecompressedOutputWriter writer = new DecompressedOutputWriter(header, outstream);
         
         x=0;
         d = input.GetBlok();

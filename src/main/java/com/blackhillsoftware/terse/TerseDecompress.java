@@ -41,7 +41,6 @@ public class TerseDecompress {
     DataInputStream BufferedStream;
     CompressedInputReader input;
     
-    BufferedOutputStream OutputBufferedStream;
     DecompressedOutputWriter DecompressedOutputWriter;
 
     private static final String DetailedHelp = new String(
@@ -60,7 +59,7 @@ public class TerseDecompress {
      * an error message.
      */
 
-    private void process (String args[]) throws IOException {
+    private void process (String args[]) throws Exception {
 
         if (args.length == 0 || args.length > 3) 
         {
@@ -79,54 +78,45 @@ public class TerseDecompress {
             System.out.println("Input args exist. About to check header");
         }
 
-
-        BufferedStream = 
+        try(DataInputStream imputStream = 
         		new DataInputStream(
         				new BufferedInputStream(
-        						new FileInputStream(args[0])));
-        
-        TerseHeader header_rv;
-        /*Apparently need to do this to set the spack flag, but the results are thrown away*/
-        header_rv = TerseHeader.CheckHeader(BufferedStream);
-        
-        if(DEBUG) {
-            System.out.println("Header is checked. About to open streams.");
-        }
-
-        input = new CompressedInputReader(BufferedStream);
-
-        OutputBufferedStream = new BufferedOutputStream(new FileOutputStream(args[1]));
- 
-        if (args.length == 3) {
-        	header_rv.TextFlag = false;
-            System.out.println("3rd argument (" +args[2] +") found, so using binary mode.");
-        }
-
-        if(DEBUG) {
-            System.out.println("Input and output streams opened. About to decode");
-        }
-
-        System.out.println("Attempting to decompress input file (" + args[0] +") to output file (" + args[1] +")");
-
-        if (!header_rv.SpackFlag) {
-        	NonSpack.decodeNonSpack(header_rv, input, OutputBufferedStream);
-        } else {
-        	Spack spack = new Spack();
-        	spack.decodeSpack(header_rv, input, OutputBufferedStream);
-        }
-
-        BufferedStream.close();
-        OutputBufferedStream.flush();
-        OutputBufferedStream.close();
-
+        						new FileInputStream(args[0]))))
+		{		        
+	        TerseHeader header_rv;
+	        /*Apparently need to do this to set the spack flag, but the results are thrown away*/
+	        header_rv = TerseHeader.CheckHeader(imputStream);
+		        
+	        if (args.length == 3) 
+	        {
+	        	header_rv.TextFlag = false;
+	            System.out.println("3rd argument (" +args[2] +") found, so using binary mode.");
+	        }		 
+		        
+	        try (DecompressedOutputWriter outputWriter 
+	        		= new DecompressedOutputWriter(
+	        				header_rv, 
+	        				new BufferedOutputStream(new FileOutputStream(args[1]))))
+	        {	 
+		        System.out.println("Attempting to decompress input file (" + args[0] +") to output file (" + args[1] +")");
+		
+		        input = new CompressedInputReader(imputStream);
+		        
+		        if (!header_rv.SpackFlag) {
+		        	NonSpack.decodeNonSpack(header_rv, input, outputWriter);
+		        } else {
+		        	Spack spack = new Spack();
+		        	spack.decodeSpack(header_rv, input, outputWriter);
+		        }
+	        }	
+		}
         System.out.println("Processing completed");
         if (DEBUG) {
             System.err.println("Read " + input.red + " bytes");
         }
-
     }
 
-    public static void main (String args[]) throws IOException {
+    public static void main (String args[]) throws Exception {
 
         TerseDecompress tersed = new TerseDecompress();
         tersed.process(args);
