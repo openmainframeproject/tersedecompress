@@ -93,7 +93,8 @@ class DecompressedOutputWriter implements AutoCloseable
 
 	@Override
 	public void close() throws Exception {
-		if (record.size() > 0)
+		if (record.size() > 0 
+				|| TextFlag && VariableFlag)
 		{
 			endRecord();
 		}
