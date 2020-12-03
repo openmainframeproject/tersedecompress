@@ -60,7 +60,7 @@ class NonSpack {
         x=0;
         d = input.GetBlok();
 
-        while (d != 0) {
+        while (d != Constants.ENDOFFILE) {
             h = 0;
             y = Backward[0];
             q = Backward[y];

@@ -11,109 +11,55 @@ class CompressedInputReader
 		this.stream = instream;
 	}
 	
-	
-    /*
-     *  Read Bits number of bits. Assumes we will never read be asked for more
-     * than 16 bits of data. Returns them in the bottom of the returned int.
-     * If we hit an io exception then we are probably stuffed anyway, as
-     * we shouldn't get an EOF exception from any of the read methods that are used, so 
-     * exit with an error message.
-     * Do need to take account of what happens when we get to the end of the file?
-     */
-
-    long buffer = 0; /*Used as an input buffer*/
-    int index = 0; /*The number of bits currently in buffer*/
-    long temp =0;
-    boolean endOfInput = false;
-    long data;
-    int red=0;
-
-    public int FileGetRequired(int Bits) {
-
-        try {
-
-            if (index < 16) {
-                /*We have less than 16 bits in the buffer so read in 16 more*/
-                temp = 0;
-                temp = stream.read();
-                red = red +1;
-                if (temp != -1) {
-                    buffer = buffer << 8;
-                    buffer = buffer | (temp & 0xFF);
-                    index = index +8;
-                } else {
-                    endOfInput = true;
-                }
-    
-                temp = 0;
-                temp = stream.read();
-                red = red +1;
-                if (temp != -1) {
-                    buffer = buffer << 8;
-                    buffer = buffer | (temp & 0xFF);
-                    index = index +8;
-                } else {
-                    endOfInput = true;
-                }
-            }
-
-            if (endOfInput && (index < Bits)) {
-                /*  We have reached the end of the file and don't have enough
-                 *  data to satisfy the request
-                 */
-                return 0;
-            }
-
-            data =0;
-            /*Loop until we have filled data with the number of bits requested*/
-            while (Bits > 0) {
-    
-                /*Read in 1 byte into data*/
-                if (Bits >7) {
-                    temp =0;
-                    /*make room in the bottom of data for another byte*/
-                    data = data << 8;
-                    /*take the top byte of buffer*/
-                    temp = 0xFF & (buffer >>> (index-8));
-                    /*copy it into the bottom of data*/
-                    data = data | (temp & 0xFF);
-                    /*update the various numbers*/
-                    index = index -8;
-                    Bits = Bits - 8;
-                }
-    
-                /*Add one bit at at time to the bottom of data*/
-                else if (Bits <8) {
-                    temp = 0;
-                    /*get the top bit of buffer to the bottom of temp*/
-                    temp = buffer & (long)(Constants.Mask[index]);
-                    temp = temp >>> (index-1);
-                    /*make space in the bottom of data and insert the new bit*/
-                    data = data <<1;
-                    data = data | temp;
-                    /*Update the input numbers*/
-                    index = index -1;
-                    Bits = Bits - 1;
-                }
-    
-            }
-        } catch (IOException e) {
-            System.err.println("Unable to read from input file. Caught IOException:");
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        return (int)data;
-    }
-
-    
+	int bitsAvailable = 0;
+	int savedBits = 0;
+	int red = 0;
+	    
     /*
      * Read in 12 bits of data, and put them in the bottom of the returned int
      */
 
-    int GetBlok() {
-        return FileGetRequired(12);
+    int GetBlok() throws IOException {
+   	
+    	if (bitsAvailable == 0)
+    	{
+    		int byte1 = stream.read();
+    		if (byte1 == -1)
+    		{
+    			return Constants.ENDOFFILE;
+    		}
+    		red++;
+    		int byte2 = stream.read();
+    		if (byte2 == -1)
+    		{
+    			throw new IOException("Tried to read 12 bits but found EOF after reading 8 bits.");
+    		}
+    		red++;
+    		// save the last 4 bits of the second byte
+    		savedBits = byte2 & 0x0F;
+    		bitsAvailable = 4;
+    		
+    		return (byte1 << 4) | (byte2 >> 4);
+    	}
+    	else
+    	{
+    		if (bitsAvailable != 4)
+    		{
+    			// should never happen, if it does we made an error
+    			throw new IOException("Unexpected count of bits available");
+    		}
+    		
+    		int byte2 = stream.read();
+    		if (byte2 == -1)
+    		{
+    			// assume the 4 bits in the last block were the last real data and 
+    			// these 4 bits only exist because you can't write 1/2 a byte 
+    			// i.e. this is EOF
+    			return Constants.ENDOFFILE;
+    		}
+    		red++;
+    		bitsAvailable = 0;
+    		return (savedBits << 8) | byte2;
+    	}
     }
-
 }
