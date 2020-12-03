@@ -15,9 +15,9 @@ class TerseHeader {
     public int Flags;
     public int Ratio;
     public int BlockSize;
-    public long  RecordLen2;
+    public int  RecordLen2;
 
-    public long  RecordLength;
+    public int  RecordLength;
     
     public boolean RecfmV = false;
     
@@ -78,8 +78,17 @@ class TerseHeader {
             header.Flags = datastream.readUnsignedByte();
             header.Ratio = datastream.readUnsignedByte();
             header.BlockSize = datastream.readUnsignedShort();
-            header.RecordLen2 = Utils.readUnsignedInt(datastream);
-        	
+            
+            // We will assume that the record length doesn't exceed the maximum value
+            // for a signed int, for the convenience of using an int instead of a long. 
+            header.RecordLen2 = datastream.readInt();
+            // but check...
+            if (header.RecordLen2 < 0)
+            {
+            	throw new IOException("Record length exceeds " + Integer.MAX_VALUE);
+            
+            }
+            
        		header.SpackFlag = (header.VersionFlag == 0x05);
         	
             if ((header.VariableFlag != 0x00) && (header.VariableFlag != 0x01))

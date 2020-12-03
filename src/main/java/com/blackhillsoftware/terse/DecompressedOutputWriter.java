@@ -15,18 +15,20 @@ class DecompressedOutputWriter implements AutoCloseable
 	boolean VariableFlag;
 	
     long         OutputTotal   = 0    ; /* total number of bytes                    */
-    long         RecordLength; /* host perspective record length           */
+    int         RecordLength; /* host perspective record length           */
 	
     byte[] lineseparator = System.lineSeparator().getBytes();
     
-	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream)
+	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream, boolean textMode)
 	{
-		this.stream = new DataOutputStream(outstream);
-		this.record = new ByteArrayOutputStream();
+		this.TextFlag = textMode;
+		
 		this.RecordLength = header.RecordLength;
 		this.HostFlag = header.HostFlag; 
-		this.TextFlag = header.TextFlag;
 		this.VariableFlag = header.RecfmV;
+		
+		this.stream = new DataOutputStream(outstream);
+		this.record = new ByteArrayOutputStream(RecordLength);
 	}
 	
     /* Write a new line to the output file*/
