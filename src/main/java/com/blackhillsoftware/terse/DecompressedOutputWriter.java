@@ -1,14 +1,19 @@
 package com.blackhillsoftware.terse;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
-class DecompressedOutputWriter implements AutoCloseable
+abstract class DecompressedOutputWriter implements AutoCloseable
 {
-	DataOutputStream stream;
+	CompressedInputReader input;
 	ByteArrayOutputStream record;
+	DataOutputStream stream;
 	
 	boolean HostFlag; 
 	boolean TextFlag;
@@ -19,15 +24,28 @@ class DecompressedOutputWriter implements AutoCloseable
 	
     byte[] lineseparator = System.lineSeparator().getBytes();
     
-	public DecompressedOutputWriter(TerseHeader header, OutputStream outstream, boolean textMode)
-	{
-		this.TextFlag = textMode;
-		
+    public abstract void decode() throws IOException;
+    
+    public static DecompressedOutputWriter create(InputStream inputStream, OutputStream outputStream) throws IOException
+    {
+        DataInputStream input = new DataInputStream(new BufferedInputStream(inputStream));
+        TerseHeader header_rv = TerseHeader.CheckHeader(input);
+        
+        if (!header_rv.SpackFlag) {
+        	return new NonSpack(input, outputStream, header_rv);
+        } else {
+        	return new Spack(input, outputStream, header_rv);
+        }
+    }
+    
+	public DecompressedOutputWriter(InputStream instream, OutputStream outputStream, TerseHeader header)
+	{		
 		this.RecordLength = header.RecordLength;
 		this.HostFlag = header.HostFlag; 
 		this.VariableFlag = header.RecfmV;
+		this.input = new CompressedInputReader(instream);
+		this.stream = new DataOutputStream(new BufferedOutputStream(outputStream));
 		
-		this.stream = new DataOutputStream(outstream);
 		this.record = new ByteArrayOutputStream(RecordLength);
 	}
 	
@@ -101,5 +119,6 @@ class DecompressedOutputWriter implements AutoCloseable
 			endRecord();
 		}
 		this.stream.close();
+		this.input.close();
 	}
 }

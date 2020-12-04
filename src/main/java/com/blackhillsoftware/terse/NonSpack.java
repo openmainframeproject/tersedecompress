@@ -1,32 +1,28 @@
 package com.blackhillsoftware.terse;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-class NonSpack {
+class NonSpack extends DecompressedOutputWriter {
 		
+	NonSpack(InputStream instream, OutputStream outputStream, TerseHeader header)
+	{
+		super(instream, outputStream, header);
+	}
+	
     /* 
      * Decode the file on the other end of the input stream using a non spack decode.
      * Write the output to the output stream.
      * Assume that both streams are initialized and ready to be read from/written to.
      */
-    static void decodeNonSpack(TerseHeader header, CompressedInputReader input, DecompressedOutputWriter writer) throws IOException {
+    public void decode() throws IOException {
 
         int [] Father = new int[Constants.TREESIZE];
         int [] CharExt = new int[Constants.TREESIZE];
         int [] Backward = new int[Constants.TREESIZE];
         int [] Forward = new int[Constants.TREESIZE];
-    	
-        if (TerseDecompress.DEBUG) {
-            System.out.println("decodeNonSpack");
-        }
-
-        if (TerseDecompress.DEBUG) {
-            System.out.println("Text Flag is: " + header.TextFlag);
-            System.out.println("Host Flag is: " + header.HostFlag);
-            System.out.println("Spack Flag is: " + header.SpackFlag);
-            System.out.println("Variable Flag is: " + header.VariableFlag);
-        }
-       
+    	      
         int  H1 = 0, H2 = 0, H3 = 0, H4 = 0, H5 = 0, H6 = 0, H7 = 0;
         int x = 0, d = 0, y = 0, q = 0, r = 0, e = 0, p = 0, h = 0;
 
@@ -87,11 +83,11 @@ class NonSpack {
             Forward [0] = h;
             Backward[h] = 0;
             CharExt [x] = d;
-            writer.PutChar(d);
+            PutChar(d);
             x = y;
             while (p != 0) {
                 e = Father[p];
-                writer.PutChar( CharExt[p]);
+                PutChar( CharExt[p]);
                 Father[p] = d;
                 d = p;
                 p = e;
@@ -99,8 +95,5 @@ class NonSpack {
             Father[y] = d;
             d = input.GetBlok();
         }
-
-        return;
     }
-
 }

@@ -1,8 +1,15 @@
 package com.blackhillsoftware.terse;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-class Spack {
+class Spack extends DecompressedOutputWriter {
+	
+	Spack(InputStream instream, OutputStream outputStream, TerseHeader header)
+	{
+		super(instream, outputStream, header);
+	}
 	
     private int node =0;
 
@@ -12,8 +19,7 @@ class Spack {
 
     StackType Stack = new StackType();
 
-
-    private void PutChars(int X, DecompressedOutputWriter outstream) throws IOException {
+    private void PutChars(int X) throws IOException {
         Stack.Head = 0;
 
         while (true) {
@@ -22,7 +28,7 @@ class Spack {
                 Stack.Data[Stack.Head] = Tree[X].Right;
                 X = Tree[X].Left;
             }
-            outstream.PutChar( X );
+            PutChar( X );
 
             if (Stack.Head > 0) {
                 X = Stack.Data[Stack.Head];
@@ -124,15 +130,8 @@ class Spack {
      * the decompressed data to.
      */
 
-    void decodeSpack(TerseHeader header, CompressedInputReader input, DecompressedOutputWriter writer) throws IOException {
-
-        if (TerseDecompress.DEBUG) {
-            System.out.println("Text Flag is: " + header.TextFlag);
-            System.out.println("Host Flag is: " + header.HostFlag);
-            System.out.println("Spack Flag is: " + header.SpackFlag);
-            System.out.println("Variable Flag is: " + header.VariableFlag);
-        }
-               
+    public void decode() throws IOException {
+              
         TreeAvail = 0;
         int N = 0, G = 0, H = 0;
        
@@ -163,7 +162,7 @@ class Spack {
 
         if (H != Constants.ENDOFFILE)
         {
-	        PutChars( H , writer);
+	        PutChars( H );
             G = input.GetBlok();
 
         	while (G != Constants.ENDOFFILE) {
@@ -172,7 +171,7 @@ class Spack {
 	                LruKill();
 	            }
 	        	
-                PutChars(G, writer);
+                PutChars(G);
 	            N = GetTreeNode();
 	            Tree[N].Left = H;
 	            Tree[N].Right = G;

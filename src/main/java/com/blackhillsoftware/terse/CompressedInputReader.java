@@ -2,7 +2,7 @@ package com.blackhillsoftware.terse;
 
 import java.io.*;
 
-class CompressedInputReader 
+class CompressedInputReader implements AutoCloseable
 {
 	InputStream stream;
 
@@ -62,4 +62,9 @@ class CompressedInputReader
     		return (savedBits << 8) | byte2;
     	}
     }
+
+	@Override
+	public void close() throws Exception {
+		stream.close();
+	}
 }

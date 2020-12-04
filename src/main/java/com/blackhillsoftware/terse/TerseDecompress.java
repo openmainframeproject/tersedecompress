@@ -56,8 +56,6 @@ public class TerseDecompress {
     DataInputStream BufferedStream;
     CompressedInputReader input;
     
-    DecompressedOutputWriter DecompressedOutputWriter;
-
     /*
      * Currently working towards a decompress in binary mode only implementation.
      * We assume that we get "TerseDecompress <input file> <output file>". Otherwise exit with
@@ -101,35 +99,16 @@ public class TerseDecompress {
     		}
     	}
 
-        try(DataInputStream inputStream = 
-        		new DataInputStream(
-        				new BufferedInputStream(
-        						new FileInputStream(inputFileName))))
-		{		        
-	        TerseHeader header_rv;
-	        header_rv = TerseHeader.CheckHeader(inputStream);
-		        
-	        try (DecompressedOutputWriter outputWriter 
-	        		= new DecompressedOutputWriter(
-	        				header_rv, 
-	        				new BufferedOutputStream(new FileOutputStream(outputFileName)), textMode))
-	        {	 
-		        System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
+
+        try (DecompressedOutputWriter outputWriter 
+        		= DecompressedOutputWriter.create(new FileInputStream(inputFileName), new FileOutputStream(outputFileName)))
+        {	 
+        	outputWriter.TextFlag = textMode;
+	        System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
+	        outputWriter.decode();
+        }	
 		
-		        input = new CompressedInputReader(inputStream);
-		        
-		        if (!header_rv.SpackFlag) {
-		        	NonSpack.decodeNonSpack(header_rv, input, outputWriter);
-		        } else {
-		        	Spack spack = new Spack();
-		        	spack.decodeSpack(header_rv, input, outputWriter);
-		        }
-	        }	
-		}
         System.out.println("Processing completed");
-        if (DEBUG) {
-            System.err.println("Read " + input.red + " bytes");
-        }
     }
 
     public static void main (String args[]) throws Exception {
