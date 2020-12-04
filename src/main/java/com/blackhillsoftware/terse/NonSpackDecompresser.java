@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-class NonSpack extends DecompressedOutputWriter {
+class NonSpackDecompresser extends TerseDecompresser {
 		
-	NonSpack(InputStream instream, OutputStream outputStream, TerseHeader header)
+	NonSpackDecompresser(InputStream instream, OutputStream outputStream, TerseHeader header)
 	{
 		super(instream, outputStream, header);
 	}
@@ -23,7 +23,7 @@ class NonSpack extends DecompressedOutputWriter {
         int [] Backward = new int[Constants.TREESIZE];
         int [] Forward = new int[Constants.TREESIZE];
     	      
-        int  H1 = 0, H2 = 0, H3 = 0, H4 = 0, H5 = 0, H6 = 0, H7 = 0;
+        int  H1 = 0, H2 = 0;
         int x = 0, d = 0, y = 0, q = 0, r = 0, e = 0, p = 0, h = 0;
 
         H2 = 1 + Constants.AscToEbcDef[' '];
@@ -43,16 +43,7 @@ class NonSpack extends DecompressedOutputWriter {
         Forward [0] = 258;
         Backward [258] = 0;
         Forward [4095] = 0;
-
-        if (TerseDecompress.DEBUG) {
-            System.out.println("Done setup in Decode2. About to read from the file");
-        }
-
-        if (TerseDecompress.DEBUG) {
-            System.out.println("Have read header info again.");
-            System.out.println("h1 is " +H1 +" h2 is " +H2 +" h3 is " +H3 +" h4 is " +H4 +" h5 is " +H5 +" h6 is " +H6 +" h7 is " +H7);
-        }
-        
+       
         x=0;
         d = input.GetBlok();
 

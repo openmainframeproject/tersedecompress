@@ -119,10 +119,6 @@ class TerseHeader {
             throw new IOException("Terse header version not recognized : " + Integer.toHexString(header.VersionFlag));
         }
         
-        if (TerseDecompress.DEBUG) {
-            System.out.println("Header is:\n" + header.toString());
-        }
-
         return header;
 
     }

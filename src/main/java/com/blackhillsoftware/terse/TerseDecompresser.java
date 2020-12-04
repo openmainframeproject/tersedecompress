@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-abstract class DecompressedOutputWriter implements AutoCloseable
+abstract class TerseDecompresser implements AutoCloseable
 {
-	CompressedInputReader input;
+	TerseBlockReader input;
 	ByteArrayOutputStream record;
 	DataOutputStream stream;
 	
@@ -26,24 +26,24 @@ abstract class DecompressedOutputWriter implements AutoCloseable
     
     public abstract void decode() throws IOException;
     
-    public static DecompressedOutputWriter create(InputStream inputStream, OutputStream outputStream) throws IOException
+    public static TerseDecompresser create(InputStream inputStream, OutputStream outputStream) throws IOException
     {
         DataInputStream input = new DataInputStream(new BufferedInputStream(inputStream));
         TerseHeader header_rv = TerseHeader.CheckHeader(input);
         
         if (!header_rv.SpackFlag) {
-        	return new NonSpack(input, outputStream, header_rv);
+        	return new NonSpackDecompresser(input, outputStream, header_rv);
         } else {
-        	return new Spack(input, outputStream, header_rv);
+        	return new SpackDecompresser(input, outputStream, header_rv);
         }
     }
     
-	public DecompressedOutputWriter(InputStream instream, OutputStream outputStream, TerseHeader header)
+	public TerseDecompresser(InputStream instream, OutputStream outputStream, TerseHeader header)
 	{		
 		this.RecordLength = header.RecordLength;
 		this.HostFlag = header.HostFlag; 
 		this.VariableFlag = header.RecfmV;
-		this.input = new CompressedInputReader(instream);
+		this.input = new TerseBlockReader(instream);
 		this.stream = new DataOutputStream(new BufferedOutputStream(outputStream));
 		
 		this.record = new ByteArrayOutputStream(RecordLength);

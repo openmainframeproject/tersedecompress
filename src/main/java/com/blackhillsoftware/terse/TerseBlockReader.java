@@ -2,11 +2,11 @@ package com.blackhillsoftware.terse;
 
 import java.io.*;
 
-class CompressedInputReader implements AutoCloseable
+class TerseBlockReader implements AutoCloseable
 {
 	InputStream stream;
 
-	public CompressedInputReader(InputStream instream)
+	public TerseBlockReader(InputStream instream)
 	{
 		this.stream = instream;
 	}

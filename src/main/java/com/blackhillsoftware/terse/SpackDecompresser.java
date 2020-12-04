@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-class Spack extends DecompressedOutputWriter {
+class SpackDecompresser extends TerseDecompresser {
 	
-	Spack(InputStream instream, OutputStream outputStream, TerseHeader header)
+	SpackDecompresser(InputStream instream, OutputStream outputStream, TerseHeader header)
 	{
 		super(instream, outputStream, header);
 	}

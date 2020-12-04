@@ -51,17 +51,6 @@ public class TerseDecompress {
         System.exit(0);
 	}	
 	
-    static final boolean DEBUG = false;  /* Control output of debug messages */
-
-    DataInputStream BufferedStream;
-    CompressedInputReader input;
-    
-    /*
-     * Currently working towards a decompress in binary mode only implementation.
-     * We assume that we get "TerseDecompress <input file> <output file>". Otherwise exit with
-     * an error message.
-     */
-
     private void process (String args[]) throws Exception {
     	
     	String inputFileName = null;
@@ -100,8 +89,8 @@ public class TerseDecompress {
     	}
 
 
-        try (DecompressedOutputWriter outputWriter 
-        		= DecompressedOutputWriter.create(new FileInputStream(inputFileName), new FileOutputStream(outputFileName)))
+        try (TerseDecompresser outputWriter 
+        		= TerseDecompresser.create(new FileInputStream(inputFileName), new FileOutputStream(outputFileName)))
         {	 
         	outputWriter.TextFlag = textMode;
 	        System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
