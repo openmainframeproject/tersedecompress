@@ -34,7 +34,7 @@ package com.blackhillsoftware.terse;
 
 import java.io.*;
 
-public class TerseDecompress {
+class TerseDecompress {
 
     private static final String DetailedHelp = new String(
             "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
