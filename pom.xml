@@ -3,16 +3,17 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.blackhillsoftware</groupId>
+	<groupId>org.openmainframeproject.tersedecompress</groupId>
 	<artifactId>tersedecompress</artifactId>
 	<version>5.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>terse</name>
-	<url>http://maven.apache.org</url>
+	<name>tersedecompress</name>
+	<url>https://github.com/openmainframeproject/tersedecompress-testdata</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<skipTests>true</skipTests>	
 	</properties>
 	<build>
 		<plugins>
@@ -33,7 +34,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>com.blackhillsoftware.terse.TerseDecompress</mainClass>
+							<mainClass>org.openmainframeproject.tersedecompress.TerseDecompress</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

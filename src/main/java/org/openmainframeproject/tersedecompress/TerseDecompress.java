@@ -1,4 +1,4 @@
-package com.blackhillsoftware.terse;
+package org.openmainframeproject.tersedecompress;
 
 /**
   Copyright Contributors to the TerseDecompress Project.

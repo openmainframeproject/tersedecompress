@@ -1,4 +1,4 @@
-package com.blackhillsoftware.terse;
+package org.openmainframeproject.tersedecompress;
 
 /*
  * Put multiple chars to the output file

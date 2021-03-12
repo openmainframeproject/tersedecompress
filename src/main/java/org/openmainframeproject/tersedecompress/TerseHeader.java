@@ -1,4 +1,4 @@
-package com.blackhillsoftware.terse;
+package org.openmainframeproject.tersedecompress;
 
 import java.io.DataInputStream;
 import java.io.IOException;
