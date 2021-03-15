@@ -21,7 +21,6 @@ package org.openmainframeproject.tersedecompress;
 /*****************************************************************************/
 /*                                                                           */
 /*  For problems and requirements please create a GitHub issue               */
-/*  or contact: clientcenter@de.ibm.com                                      */
 /*                                                                           */
 /*****************************************************************************/
 /*                                                                           */
@@ -31,6 +30,10 @@ package org.openmainframeproject.tersedecompress;
 /* Version 4 with editorial changes for publication as open source code      */
 /*          Klaus Egeler, Boris Barth  (clientcenter@de.ibm.com)             */
 /*****************************************************************************/
+/* Version 5: support for variable length binary records                     */
+/*          Andrew Rowley, Black Hill Software                               */
+/*          Mario Bezzi, Watson Walker                                       */
+/*****************************************************************************/
 
 import java.io.*;
 
@@ -39,11 +42,11 @@ class TerseDecompress {
     private static final String DetailedHelp = new String(
             "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
            +"Java TerseDecompress will decompress a file compressed using the terse program on z/OS\n"
-           +"Default mode is text mode, which will attempt ebcdic -> ASCII conversion\n"
+           +"Default mode is text mode, which will attempt EBCDIC -> ASCII conversion\n"
            +"The -b flag turns on binary mode, no conversion will be attempted\n"
           );
 
-    private static final String Version = new String ("Version 5, March 2020");
+    private static final String Version = new String ("Version 5, March 2021");
 	
 	private void printUsageAndExit() {
 		System.out.println(DetailedHelp);
@@ -86,6 +89,10 @@ class TerseDecompress {
     		{
                 printUsageAndExit();   		
     		}
+    	}
+    	if (inputFileName == null || outputFileName == null)
+    	{
+    		printUsageAndExit();
     	}
 
 
