@@ -44,6 +44,10 @@ public class AppTest
 	@Test public void testBinaryPack31() throws Exception { testBinary("VB.E.COLI",       "PACK"); }
 	@Test public void testBinaryPack32() throws Exception { testBinary("VB.PI.TXT",       "PACK"); }
 	@Test public void testBinaryPack33() throws Exception { testBinary("VB.RANDOM.TXT",   "PACK"); }
+	@Test public void testBinaryPack34() throws Exception { testBinary("VB.ALICE29.TXT",  "PACK"); }
+	@Test public void testBinaryPack35() throws Exception { testBinary("VB.ASYOULIK.TXT", "PACK"); }
+	@Test public void testBinaryPack36() throws Exception { testBinary("VB.PLRABN12.TXT", "PACK"); }
+
 	
 	// The following test fails, but also uncompresses incorrectly using AMATERSE on z/OS.
 	// The failure seems to be in the SPACK compression using AMATERSE.
@@ -82,6 +86,9 @@ public class AppTest
 	@Test public void testBinarySPack31() throws Exception { testBinary("VB.E.COLI",       "SPACK"); }
 	@Test public void testBinarySPack32() throws Exception { testBinary("VB.PI.TXT",       "SPACK"); }
 	@Test public void testBinarySPack33() throws Exception { testBinary("VB.RANDOM.TXT",   "SPACK"); }
+	@Test public void testBinarySPack34() throws Exception { testBinary("VB.ALICE29.TXT",  "SPACK"); }
+	@Test public void testBinarySPack35() throws Exception { testBinary("VB.ASYOULIK.TXT", "SPACK"); }
+	@Test public void testBinarySPack36() throws Exception { testBinary("VB.PLRABN12.TXT", "SPACK"); }
 	
 	@Test public void testTextPack01() throws Exception { testText("FB.A.TXT",        "PACK"); }
 	@Test public void testTextPack02() throws Exception { testText("FB.AAA.TXT",      "PACK"); }
