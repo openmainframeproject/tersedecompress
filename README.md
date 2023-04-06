@@ -1,5 +1,3 @@
-**NOTICE: This project is in [Emeritus status](https://tac.openmainframeproject.org/process/lifecycle.html#emeritus-stage) and no longer maintained**
-
 # tersedecompress
 
 TerseDecompress is a java program that can be used to decompress files
