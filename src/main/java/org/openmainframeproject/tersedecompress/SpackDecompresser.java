@@ -28,6 +28,10 @@ class SpackDecompresser extends TerseDecompresser {
                 Stack.Data[Stack.Head] = Tree[X].Right;
                 X = Tree[X].Left;
             }
+            if(X < 0)
+            {
+    			throw new IOException("Unexpected sequence, seems like file is corrupted");
+            }
             PutChar( X );
 
             if (Stack.Head > 0) {
