@@ -95,14 +95,16 @@ class TerseDecompress {
     		printUsageAndExit();
     	}
 
-
+		System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
         try (TerseDecompresser outputWriter 
         		= TerseDecompresser.create(new FileInputStream(inputFileName), new FileOutputStream(outputFileName)))
         {	 
         	outputWriter.TextFlag = textMode;
-	        System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
 	        outputWriter.decode();
-        }	
+        }
+		catch (Exception e) {
+			System.out.printf("Something went wrong, Exception %s\n", e.getMessage());
+		}
 		
         System.out.println("Processing completed");
     }
