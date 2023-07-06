@@ -109,6 +109,9 @@ abstract class TerseDecompresser implements AutoCloseable
                 }
             }
         }
+        if (record.size() >= Integer.MAX_VALUE - 10) {
+            endRecord();
+        }
     }
 
 	@Override
