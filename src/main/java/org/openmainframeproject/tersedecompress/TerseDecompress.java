@@ -43,10 +43,17 @@ class TerseDecompress {
             "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
            +"Java TerseDecompress will decompress a file compressed using the terse program on z/OS\n"
            +"Default mode is text mode, which will attempt EBCDIC -> ASCII conversion\n"
-           +"The -b flag turns on binary mode, no conversion will be attempted\n"
+           +"If no <output file> provided in text mode, it will default to <input file>.txt\n"
+           +"Options:\n"
+           +"-b flag turns on binary mode, no conversion will be attempted\n"
+           +"-h or --help prints this message\n"
           );
 
     private static final String Version = new String ("Version 5, March 2021");
+    private String inputFileName = null;
+    private String outputFileName = null;
+    private boolean isHelpRequested = false;
+    private boolean textMode = true;
 	
 	private void printUsageAndExit() {
 		System.out.println(DetailedHelp);
@@ -55,45 +62,15 @@ class TerseDecompress {
 	}	
 	
     private void process (String args[]) throws Exception {
-    	
-    	String inputFileName = null;
-    	String outputFileName = null;
-    	boolean textMode = true;   	
-    	
-    	if (args.length == 0) 
+        parseArgs(args);
+    	if (args.length == 0 || (inputFileName == null && outputFileName == null) || (outputFileName == null && textMode == false) || isHelpRequested == true) 
         {
             printUsageAndExit();
         }
-        
-    	for (int i=0; i < args.length; i++)
-    	{
-    		if (args[i].equals("-h") || args[i].equals("--help"))
-    		{
-                printUsageAndExit();
-    		}
-    		else if (args[i].equals("-b"))
-    		{
-    			textMode = false;
-    		}
-    		// first non-flag argument is the input file name 
-    		else if (inputFileName == null)
-    		{
-    			inputFileName = args[i];
-    		}
-    		// second non-flag argument is the input file name 
-    		else if (outputFileName == null)
-    		{
-    			outputFileName = args[i];
-    		}
-    		else // we have more args than we know what to do with
-    		{
-                printUsageAndExit();   		
-    		}
-    	}
-    	if (inputFileName == null || outputFileName == null)
-    	{
-    		printUsageAndExit();
-    	}
+
+        if (outputFileName == null) {
+            outputFileName = inputFileName + ".txt";
+        }
 
 		System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
         try (TerseDecompresser outputWriter 
@@ -109,6 +86,28 @@ class TerseDecompress {
         System.out.println("Processing completed");
     }
 
+    private void parseArgs(String args[]) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-h") || args[i].equals("--help")) {
+                isHelpRequested = true;
+            }
+            else if (args[i].equals("-b")) {
+                textMode = false;
+            }
+            // first non-flag argument is the input file name
+            else if (inputFileName == null) {
+                inputFileName = args[i];
+            }
+            // second non-flag argument is the input file name
+            else if (outputFileName == null) {
+                outputFileName = args[i];
+            }
+            else // we have more args than we know what to do with
+            {
+                isHelpRequested = true;
+            }
+        }
+    }
     public static void main (String args[]) throws Exception {
 
         TerseDecompress tersed = new TerseDecompress();
