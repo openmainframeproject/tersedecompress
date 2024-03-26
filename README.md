@@ -30,7 +30,7 @@ For execution, TerseDecompress needs a JVM runtime environment.
 
 Usage:
 
-```java -jar tersedecompress-5.0.1.jar [-b] tersed-file output-file```
+```java -jar tersedecompress-6.0.0.jar [-b] tersed-file output-file```
 
 Default mode is text mode, which will attempt EBCDIC -> ASCII conversion.
 
