@@ -15,7 +15,7 @@ IBM Mainframe files on any workstation or laptop etc. that supports Java.
 
 ## Updates ##
 
-**Version 5.0.1: March 2024**
+**Version 6: March 2024**
 
 - Added support to decompress then recompress into a gzip file if output-file name ends in ".gz"
 - Updated pom.xml to have Maven compile using Java 17, and shade the jar.
