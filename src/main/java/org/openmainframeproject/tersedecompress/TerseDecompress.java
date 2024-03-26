@@ -34,8 +34,12 @@ package org.openmainframeproject.tersedecompress;
 /*          Andrew Rowley, Black Hill Software                               */
 /*          Mario Bezzi, Watson Walker                                       */
 /*****************************************************************************/
+/* Version 6: support for gzipped output records                             */
+/*          Russell Shaw                                                     */
+/*****************************************************************************/
 
 import java.io.*;
+import java.util.zip.GZIPOutputStream;
 
 class TerseDecompress {
 
@@ -46,7 +50,7 @@ class TerseDecompress {
            +"The -b flag turns on binary mode, no conversion will be attempted\n"
           );
 
-    private static final String Version = new String ("Version 5, March 2021");
+    private static final String Version = new String ("Version 6, March 2024");
 	
 	private void printUsageAndExit() {
 		System.out.println(DetailedHelp);
@@ -95,14 +99,17 @@ class TerseDecompress {
     		printUsageAndExit();
     	}
 
+		TerseDecompresser outputWriter = null;
+		FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
 
-        try (TerseDecompresser outputWriter 
-        		= TerseDecompresser.create(new FileInputStream(inputFileName), new FileOutputStream(outputFileName)))
-        {	 
-        	outputWriter.TextFlag = textMode;
-	        System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
-	        outputWriter.decode();
-        }	
+		if (outputFileName.endsWith(".gz"))
+			outputWriter = TerseDecompresser.create(new FileInputStream(inputFileName), new GZIPOutputStream(fileOutputStream));
+		else
+			outputWriter = TerseDecompresser.create(new FileInputStream(inputFileName), fileOutputStream);
+
+       	outputWriter.TextFlag = textMode;
+	    System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
+	    outputWriter.decode();
 		
         System.out.println("Processing completed");
     }
