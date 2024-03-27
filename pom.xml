@@ -5,7 +5,7 @@
 
 	<groupId>org.openmainframeproject.tersedecompress</groupId>
 	<artifactId>tersedecompress</artifactId>
-	<version>6.0.0</version>
+	<version>5.0.1</version>
 	<packaging>jar</packaging>
 
 	<name>tersedecompress</name>
