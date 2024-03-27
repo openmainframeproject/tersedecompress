@@ -123,7 +123,7 @@ class TerseDecompress {
         System.out.println("Processing completed");
     }
 
-	private void parseArgs(String args[]) {
+    private void parseArgs(String args[]) {
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-h") || args[i].equals("--help")) {
                 isHelpRequested = true;
