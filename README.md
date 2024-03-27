@@ -15,10 +15,14 @@ IBM Mainframe files on any workstation or laptop etc. that supports Java.
 
 ## Updates ##
 
-**Version 5.0.1: March 2024**
+**Version 5.0.2: March 2024**
 
 - Added support to decompress then recompress into a gzip file if output-file name ends in ".gz"
 - Updated pom.xml to have Maven compile using Java 17, and shade the jar.
+
+**Version 5.0.1: March 2024**
+
+- allow user to specify only <input file> for text files. Resulting <output file> will be <input file>.txt
 
 **Version 5: March 2021**
 
@@ -30,7 +34,7 @@ For execution, TerseDecompress needs a JVM runtime environment.
 
 Usage:
 
-```java -jar tersedecompress-5.0.1.jar [-b] tersed-file output-file```
+```java -jar tersedecompress-5.0.2.jar [-b] tersed-file output-file```
 
 Default mode is text mode, which will attempt EBCDIC -> ASCII conversion.
 
