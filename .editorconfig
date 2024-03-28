@@ -1,0 +1,15 @@
+# Declares that this is the top-level configuration
+root = true
+
+# Applies to all files
+[*]
+indent_style = space
+indent_size = 4
+
+# Applies to all Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# Applies to all C# and Java files, overriding rules declared before
+[*.{cs,java}]
+indent_size = 4
