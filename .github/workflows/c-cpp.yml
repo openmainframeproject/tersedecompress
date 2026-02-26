@@ -1,0 +1,29 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: Bacondish2023/setup-googletest@v1
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Set up Clang
+      uses: egor-tensin/setup-clang@v2
+      with:
+        version: latest
+        platform: x64
+    - name: make
+      working-directory: cpp
+      run: make
+    - name: make check
+      working-directory: cpp
+      run: make check
