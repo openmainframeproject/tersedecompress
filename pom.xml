@@ -24,6 +24,9 @@
 				<version>3.11.0</version>
 				<configuration>
                     <release>21</release>
+					<compilerArgs>
+						<arg>-Xlint:all</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -69,6 +72,20 @@
 						<phase>generate-sources</phase>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.9.3.1</version>
+				<configuration>
+					<!-- Best-effort: report findings but never fail the build -->
+					<failOnError>false</failOnError>
+					<effort>Max</effort>
+					<threshold>Low</threshold>
+					<!-- Analyse only project classes; skip unresolvable JDK references -->
+					<noClassOk>true</noClassOk>
+					<jvmArgs>-Dfindbugs.ignoreUnresolvable=true</jvmArgs>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

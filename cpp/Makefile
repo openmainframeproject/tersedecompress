@@ -1,6 +1,6 @@
 .SECONDARY:
 .SUFIXES:
-.PHONY: all src tests clean
+.PHONY: all src tests clean lint
 
 UNAME:=$(shell uname)
 
@@ -22,3 +22,8 @@ all: src
 clean:
 	$(MAKE) $(MAKE_FLAGS) -C src clean
 	$(MAKE) $(MAKE_FLAGS) -C tests clean
+
+lint:
+	cppcheck --enable=all --std=c++17 \
+	         --suppress=missingIncludeSystem \
+	         src/
