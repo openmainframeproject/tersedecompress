@@ -4,7 +4,7 @@ BIN_DIR:=$(ROOT_DIR)bin
 
 UNAME:=$(shell uname)
 PREFIX?=$(HOME)/local
-CXXFLAGS = -std=c++17 -O2
+CXXFLAGS = -std=c++17 -O2 -Wall -Wextra -Wpedantic
 CCFLAGS_DLL += -fPIC -fvisibility=default
 AR=ar
 LIBS +=$(BIN_DIR)/libtersedecompress.a

@@ -1,6 +1,6 @@
 .SECONDARY:
 .SUFIXES:
-.PHONY: all src tests clean
+.PHONY: all src tests clean lint
 
 default: all
 
@@ -15,3 +15,8 @@ all: src
 clean:
 	$(MAKE) -j4 -C src clean
 	$(MAKE) -j4 -C tests clean
+
+lint:
+	cppcheck --enable=all --std=c++17 \
+	         --suppress=missingIncludeSystem \
+	         src/
