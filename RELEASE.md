@@ -23,6 +23,12 @@ Releases do not happen on a fixed schedule. They occur when:
 - a new feature is completed and tested
 - accumulated changes benefit a stable release
 
+## Development Process Transparency
+
+Development happens continuously in this public repository. Commits and Pull Requests occur between official releases as new features are implemented and bugs are fixed. 
+
+Release tags and the associated GitHub Releases represent stable snapshots of the project at a point in time, but they do not constitute the entirety of the project's history or activity. Users and contributors are encouraged to follow the `main` branch for the latest updates.
+
 ## Release Workflow
 
 1. Work merged to `main` branch.
