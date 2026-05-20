@@ -28,7 +28,7 @@ void ArgumentParser::showHelp() const
   std::cout << "Arguments:\n";
   std::cout << "  input_file   Path to the input file (required).\n";
   std::cout << "  output_file  Path to the output file (optional).\n";
-  std::cout << "               In text mode, output_file defaults to <input file>.txt.\n";
+  std::cout << "               If not provided, defaults to <input file>.txt (or .bin in binary mode).\n";
   std::cout << "Version: 5.0.1, commit " << GIT_TAG << "\n";
 }
 
@@ -72,9 +72,16 @@ void ArgumentParser::parseArguments(int argc, char **argv)
     showHelp();
     std::exit(1);
   }
-  // If we have input but no output and we're in text mode => default output = input + ".txt"
-  if (hasFlag("-b") != true && outputFile.empty())
+  
+  if (outputFile.empty())
   {
-    outputFile = inputFile + ".txt";
+    std::string baseName = inputFile;
+    if (baseName.find("//") == 0) {
+      baseName = baseName.substr(2);
+    }
+    if (baseName.length() >= 2 && baseName.front() == '\'' && baseName.back() == '\'') {
+      baseName = baseName.substr(1, baseName.length() - 2);
+    }
+    outputFile = baseName + (hasFlag("-b") ? ".bin" : ".txt");
   }
 }
