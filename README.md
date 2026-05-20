@@ -19,6 +19,21 @@ IBM Mainframe files compressed with TERSE often need to be analyzed or processed
 
 ---
 
+## Version History
+
+**Version 5.0.1: July 2023 -- September 2025**
+
+- Updated pom.xml to have Maven compile using Java 21
+- Allow user to specify only `<input file>` for text files. Resulting `<output file>` will be `<input file>.txt`
+- Added C++ port
+- Added commit id to the version
+
+**Version 5: March 2021**
+
+- Support for variable length binary records. Variable length records processed in binary mode will be prefixed with a 4 byte field in the same format as the IBM RDW i.e. 2 byte record length field (including RDW length, big-endian) followed by 2 bytes of zeros.
+
+---
+
 ## Installation
 
 ### Java
@@ -50,6 +65,31 @@ IBM Mainframe files compressed with TERSE often need to be analyzed or processed
    ```
 3. The executable will be located at `cpp/src/tersedecompress`.
 4. A static library `libtersedecompress.a` is also produced in `cpp/src/`.
+
+---
+
+## Unit Tests
+
+The project contains unit tests to verify that the decompression is correct.
+
+Due to the size of the test data, it is stored in a separate git repository and referenced via a submodule. The test data is not required to build tersedecompress, unless you want to run the unit tests.
+
+The test data can be found here:
+[https://github.com/openmainframeproject/tersedecompress-testdata](https://github.com/openmainframeproject/tersedecompress-testdata)
+
+Descriptions of the data are here:
+[https://github.com/openmainframeproject/tersedecompress-testdata/tree/master/tests](https://github.com/openmainframeproject/tersedecompress-testdata/tree/master/tests)
+
+### Building with Unit Tests
+
+1. Initialize (download) the submodule containing the test data:
+   ```bash
+   git submodule update --init
+   ```
+2. Build with unit tests:
+   ```bash
+   mvn -DskipTests=false clean package
+   ```
 
 ---
 
