@@ -1,26 +1,138 @@
-﻿# Issue #22: Correctly Construct Default Output Filename for Datasets and Binary Mode
+# 📝 Solution Documentation: Issue #22
 
-## Overview
-This contribution addresses Issue #22 in openmainframeproject/tersedecompress where the default output filename was incorrectly constructed when providing z/OS dataset names (e.g. //'my.data.set') or when operating in binary mode (-b).
+## 📌 Issue & PR Status
+- **Upstream Issue**: [#22 — correctly construct default output filename for datasets and binary mode](https://github.com/openmainframeproject/tersedecompress/issues/22)
+- **Pull Request**: [**PR #32 on openmainframeproject/tersedecompress**](https://github.com/openmainframeproject/tersedecompress/pull/32)
+- **Branch**: `fix/issue-22-output-filename`
+- **Commit Hash**: `34560e1` / `25e0a06`
+- **DCO Sign-off**: `Signed-off-by: Ayush Mahajan <140263932+Ayush-AM@users.noreply.github.com>`
+- **Status**: **PR Created & Active**
 
-## Key Updates & Fixes
+---
 
-### 1. Java Implementation (src/main/java/org/openmainframeproject/tersedecompress/TerseDecompress.java)
-- Enabled default output filename generation for binary mode (-b), which previously required an explicit output filename or exited.
-- Added path normalization to strip leading // prefixes and surrounding single quotes ('...') common in z/OS dataset specifications.
-- Appends .bin extension when binary mode (-b) is active, and .txt in text mode.
+## 🛠️ What We Actually Did (Problem & Fix)
 
-### 2. C++ Implementation (cpp/src/argumentParser.cpp)
-- Updated argument parser to support default output file construction in binary mode.
-- Sanitized dataset inputs starting with // and enclosed in '...'.
-- Updated CLI help messages and usage documentation.
+### The Problem
+When running TerseDecompress:
+1. If the input file was a z/OS dataset name (e.g. `//'my.data.set'`), the program failed to construct a valid output filename, leading to illegal output paths like `//'my.data.set'.txt`.
+2. If operating in binary mode (`-b`), omitting the `<output file>` parameter caused the program to exit or require an explicit output parameter, unlike text mode which defaulted to `<input>.txt`.
 
-## Testing & Verification
-- Validated text mode decompression defaults to <dataset_base>.txt.
-- Validated binary mode -b defaults to <dataset_base>.bin.
-- Verified z/OS dataset paths like //'my.dataset.name' correctly yield my.dataset.name.bin / my.dataset.name.txt.
+### The Solution
+1. **Path Normalization**: Added logic to strip leading `//` prefixes and surrounding single quotes `'` from dataset paths.
+2. **Binary Mode Extension**: Omitted output filenames now default to `<sanitized_input>.bin` when `-b` is active, and `<sanitized_input>.txt` in text mode.
+3. **CLI Help Update**: Updated help output in both Java and C++ implementations to reflect the new default filename behavior.
 
-## Open Source & Foundation Compliance
-- **DCO Sign-off**: All commits signed off with Signed-off-by: Ayush Mahajan <140263932+Ayush-AM@users.noreply.github.com>.
-- **Conventional Commits**: Commit subject formatted as ix: correctly construct default output filename for datasets and binary mode.
-- **PR Reference**: Cross-referenced issue as Fixes #22 in Pull Request #32.
+---
+
+## 📊 Software Engineering Architecture Diagrams
+
+### 1. Sequence Diagram (Execution Flow)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant CLI as TerseDecompress (CLI)
+    participant Parser as parseArgs / ArgumentParser
+    participant Stream as TersedInputStream
+    participant FileSystem as File System / Storage
+
+    User->>CLI: Execute: java -jar tersedecompress.jar -b "//'my.data.set'"
+    CLI->>Parser: parseArgs(args)
+    activate Parser
+    Parser->>Parser: Detect -b (binaryMode = true)
+    Parser->>Parser: Strip leading "//" prefix -> "'my.data.set'"
+    Parser->>Parser: Strip single quotes "' '" -> "my.data.set"
+    Parser->>Parser: Construct output filename -> "my.data.set.bin"
+    Parser-->>CLI: Return parsed input & output filenames
+    deactivate Parser
+
+    CLI->>Stream: TersedInputStream(inputPath, outputPath)
+    activate Stream
+    Stream->>FileSystem: Read compressed z/OS bytes
+    Stream->>FileSystem: Write decompressed binary stream to "my.data.set.bin"
+    Stream-->>CLI: Complete decompression
+    deactivate Stream
+    CLI-->>User: Decompression complete: my.data.set.bin
+```
+
+### 2. Class Diagram (Software Architecture)
+```mermaid
+classDiagram
+    class TerseDecompress {
+        -String inputFileName
+        -String outputFileName
+        -boolean textMode
+        -boolean isHelpRequested
+        +main(args: String[])
+        +process(args: String[])
+        -parseArgs(args: String[])
+        -printUsageAndExit()
+    }
+
+    class ArgumentParser {
+        -std::string inputFile
+        -std::string outputFile
+        -std::vector~std::string~ flags
+        +parseArguments(argc: int, argv: char**)
+        +showHelp()
+        +hasFlag(flag: std::string) bool
+        +getInputFile() std::string
+        +getOutputFile() std::string
+    }
+
+    class TersedInputStream {
+        -InputStream in
+        -byte[] buffer
+        +read() int
+        +close() void
+    }
+
+    TerseDecompress --> TersedInputStream : Uses for Java Decompression
+    TerseDecompress ..> ArgumentParser : C++ Port Alignment
+```
+
+---
+
+## 📂 Files Modified & Exact Code Diffs
+
+### 1. `src/main/java/org/openmainframeproject/tersedecompress/TerseDecompress.java`
+**Lines Modified**: L43, L63-L79
+```java
+// Sanitizing dataset name and applying .bin / .txt defaults
+if (outputFileName == null) {
+    String baseName = inputFileName;
+    if (baseName.startsWith("//")) {
+        baseName = baseName.substring(2);
+    }
+    if (baseName.startsWith("'") && baseName.endsWith("'")) {
+        baseName = baseName.substring(1, baseName.length() - 1);
+    }
+    outputFileName = baseName + (textMode ? ".txt" : ".bin");
+}
+```
+
+### 2. `cpp/src/argumentParser.cpp`
+**Lines Modified**: L28, L72-L85
+```cpp
+// Sanitizing dataset name and applying .bin / .txt defaults in C++
+if (outputFile.empty())
+{
+    std::string baseName = inputFile;
+    if (baseName.find("//") == 0) {
+        baseName = baseName.substr(2);
+    }
+    if (baseName.length() >= 2 && baseName.front() == ''' && baseName.back() == ''') {
+        baseName = baseName.substr(1, baseName.length() - 2);
+    }
+    outputFile = baseName + (hasFlag("-b") ? ".bin" : ".txt");
+}
+```
+
+---
+
+## 💾 Storage & Export Locations
+
+This solution documentation with architecture diagrams is saved in:
+1. **Repository Path**: `C:\Ayush\Desktop\lfx\tersedecompress\docs\contributions\ISSUE-22.md`
+2. **Dashboard Data Store**: `c:\Ayush\Desktop\OPEN SOURCE AUTO\data\solutions\ISSUE-22-SOLUTION.md`
+3. **Dashboard Web Download**: Available via `http://localhost:3847/api/contributions/72b83d1b-f1d6-4a21-a322-a9b0371b1d39/solution.md`
