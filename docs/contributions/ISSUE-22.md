@@ -31,26 +31,25 @@ When running TerseDecompress:
 sequenceDiagram
     autonumber
     actor User
-    participant CLI as TerseDecompress (CLI)
-    participant Parser as parseArgs / ArgumentParser
+    participant CLI as TerseDecompress CLI
+    participant Parser as ArgumentParser
     participant Stream as TersedInputStream
-    participant FileSystem as File System / Storage
+    participant FileSystem as File System
 
     User->>CLI: Execute: java -jar tersedecompress.jar -b "//'my.data.set'"
     CLI->>Parser: parseArgs(args)
     activate Parser
-    Parser->>Parser: Detect -b (binaryMode = true)
-    Parser->>Parser: Strip leading "//" prefix -> "'my.data.set'"
-    Parser->>Parser: Strip single quotes "' '" -> "my.data.set"
-    Parser->>Parser: Construct output filename -> "my.data.set.bin"
-    Parser-->>CLI: Return parsed input & output filenames
+    Parser->>Parser: Strip leading slashes to get "'my.data.set'"
+    Parser->>Parser: Strip single quotes to get "my.data.set"
+    Parser->>Parser: Append .bin extension to get "my.data.set.bin"
+    Parser-->>CLI: Return parsed input and output filenames
     deactivate Parser
 
     CLI->>Stream: TersedInputStream(inputPath, outputPath)
     activate Stream
     Stream->>FileSystem: Read compressed z/OS bytes
-    Stream->>FileSystem: Write decompressed binary stream to "my.data.set.bin"
-    Stream-->>CLI: Complete decompression
+    Stream->>FileSystem: Write decompressed stream to "my.data.set.bin"
+    Stream-->>CLI: Decompression finished
     deactivate Stream
     CLI-->>User: Decompression complete: my.data.set.bin
 ```
@@ -63,32 +62,32 @@ classDiagram
         -String outputFileName
         -boolean textMode
         -boolean isHelpRequested
-        +main(args: String[])
-        +process(args: String[])
-        -parseArgs(args: String[])
+        +main(args)
+        +process(args)
+        -parseArgs(args)
         -printUsageAndExit()
     }
 
     class ArgumentParser {
-        -std::string inputFile
-        -std::string outputFile
-        -std::vector~std::string~ flags
-        +parseArguments(argc: int, argv: char**)
+        -string inputFile
+        -string outputFile
+        -vector flags
+        +parseArguments(argc, argv)
         +showHelp()
-        +hasFlag(flag: std::string) bool
-        +getInputFile() std::string
-        +getOutputFile() std::string
+        +hasFlag(flag) bool
+        +getInputFile() string
+        +getOutputFile() string
     }
 
     class TersedInputStream {
         -InputStream in
-        -byte[] buffer
+        -byteBuffer buffer
         +read() int
         +close() void
     }
 
-    TerseDecompress --> TersedInputStream : Uses for Java Decompression
-    TerseDecompress ..> ArgumentParser : C++ Port Alignment
+    TerseDecompress --> TersedInputStream : Uses for Decompression
+    TerseDecompress ..> ArgumentParser : Transpiled C++ Behavior
 ```
 
 ---
