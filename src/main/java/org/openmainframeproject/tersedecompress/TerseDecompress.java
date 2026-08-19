@@ -43,7 +43,7 @@ class TerseDecompress {
             "Usage: \"TerseDecompress <input file> <output file> [-b]\"\n\n"
            +"Java TerseDecompress will decompress a file compressed using the terse program on z/OS\n"
            +"Default mode is text mode, which will attempt EBCDIC -> ASCII conversion\n"
-           +"If no <output file> provided in text mode, it will default to <input file>.txt\n"
+           +"If no <output file> provided, it will default to <input file>.txt (or .bin in binary mode)\n"
            +"Options:\n"
            +"-b flag turns on binary mode, no conversion will be attempted\n"
            +"-h or --help prints this message\n"
@@ -63,13 +63,20 @@ class TerseDecompress {
 	
     private void process (String args[]) throws Exception {
         parseArgs(args);
-    	if (args.length == 0 || (inputFileName == null && outputFileName == null) || (outputFileName == null && textMode == false) || isHelpRequested == true) 
+    	if (args.length == 0 || (inputFileName == null && outputFileName == null) || isHelpRequested == true) 
         {
             printUsageAndExit();
         }
 
         if (outputFileName == null) {
-            outputFileName = inputFileName + ".txt";
+            String baseName = inputFileName;
+            if (baseName.startsWith("//")) {
+                baseName = baseName.substring(2);
+            }
+            if (baseName.startsWith("'") && baseName.endsWith("'")) {
+                baseName = baseName.substring(1, baseName.length() - 1);
+            }
+            outputFileName = baseName + (textMode ? ".txt" : ".bin");
         }
 
 		System.out.println("Attempting to decompress input file (" + inputFileName +") to output file (" + outputFileName +")");
