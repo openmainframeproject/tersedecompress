@@ -7,7 +7,7 @@ This document describes how **TerseDecompress** performs releases, why releases 
 Releases signal reviewed, stable versions of the software for users. They provide:
 - a unique version identifier
 - release notes describing functionality and fixes
-- references to where users can obtain the artifact and ask questions
+- references to where users can obtain the artifacts and ask questions
 
 ## Versioning
 
@@ -16,35 +16,54 @@ We use semantic versioning **MAJOR.MINOR.PATCH**:
 - **MINOR**: new backward-compatible enhancements
 - **MAJOR**: breaking changes (rare)
 
-## Release Frequency
+The Java and C++ implementations are released together under the same version.
+
+## Release frequency
 
 Releases do not happen on a fixed schedule. They occur when:
 - a bug impacting users is fixed
 - a new feature is completed and tested
 - accumulated changes benefit a stable release
 
-## Release Workflow
+## Branches
 
-1. Work merged to `main` branch.
-2. At least one additional maintainer approves.
-3. All tests are passing in CI.
-4. Release version bumped.
-5. Human-readable **release notes** drafted (CHANGELOG/Release Notes).
-6. Tag is created and pushed.
-7. GitHub Release page is published with artifacts.
+- `master` holds the latest release.
+- Each minor version is developed on a release branch, `release-X.Y`
+  (for example, `release-5.1`).
 
-## Release Notes
+## Release workflow
+
+1. All planned work is merged into `release-X.Y`.
+2. Set the version in all three places:
+   - `pom.xml`: `<version>`
+   - `src/main/java/org/openmainframeproject/tersedecompress/TerseDecompress.java`: `versionString`
+   - `cpp/src/argumentParser.cpp`: the `Version:` line in `showHelp()`
+3. Update the version history in `README.md`.
+4. CI passes on `release-X.Y` for both Java and C++.
+5. Check the C++ build on z/OS (CI doesn't cover z/OS).
+6. Open a pull request from `release-X.Y` to `master`. At least one other
+   maintainer approves it.
+7. Merge the pull request.
+8. Tag the merge commit on `master` as `release_X.Y.Z` and push the tag.
+9. Publish a GitHub Release for the tag, with release notes and these artifacts:
+   - `tersedecompress.jar`, built with `mvn clean package`
+   - `tersedecompress++` binaries for the platforms the maintainers can build
+
+## Release notes
 
 Release notes include:
 - high-level summary of what changed
-- user-facing changes
-- deprecated or removed behavior
-- link to issues/PRs if relevant
+- user-facing changes, including new or changed command-line options
+- deprecated or removed behaviour
+- links to issues and pull requests
 
 ## Dependencies
 
-Current release also includes a list of tracked dependencies used at build time.
+- Java: no runtime dependencies beyond a Java 21 or later runtime. Tests use JUnit 4.
+- C++: zlib at runtime. Tests use GoogleTest.
+- Build plugins are pinned in `pom.xml`.
 
 ## Support and reporting
 
-See SUPPORT.md for details on how users get help and report problems.
+See [SUPPORT.md](SUPPORT.md) for how users get help and report problems, and
+[SECURITY.md](SECURITY.md) for reporting vulnerabilities.

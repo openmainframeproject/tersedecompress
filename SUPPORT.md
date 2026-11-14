@@ -2,41 +2,41 @@
 
 This document explains how users and developers can get help with **TerseDecompress**.
 
-## Getting Help
+## Getting help
 
-**Report bugs or ask questions** using the GitHub issue tracker:
+Ask questions and report bugs in the GitHub issue tracker:
 https://github.com/openmainframeproject/tersedecompress/issues
 
 When opening an issue, include:
-- version of TerseDecompress
-- operating system
-- steps to reproduce
-- error messages or logs
+- the TerseDecompress version (`java -jar tersedecompress.jar -v`, or the
+  version line printed by `tersedecompress++ -h`)
+- which implementation you used: Java or C++
+- your operating system, and Java version if you used the jar
+- the exact command line, including options such as `-b` and `-z`
+- the error message or output
+- how the file was tersed on the mainframe, if you know it (PACK or SPACK,
+  record format, data set type)
 
-## Contact Paths
+Tersed files often contain confidential data. **Don't attach production files
+to a public issue.** If a sample file is needed to reproduce the problem,
+create a small test file with non-sensitive content.
 
-- GitHub Issues for bugs and enhancements
-- Pull requests for proposed fixes
-- Discussions / replies on issues if broader topic
+You can also ask in the Open Mainframe Project Slack, channel
+[#tersedecompress](https://slack.openmainframeproject.org).
 
-## Response Expectations
+## Reporting vulnerabilities
+
+Don't report security vulnerabilities in public issues. Follow
+[SECURITY.md](SECURITY.md) to report them privately.
+
+## Response expectations
 
 This is a community project maintained by volunteers.
-We strive to respond to new issues within a reasonable timeframe.
-There is **no guaranteed SLA**.
+We try to respond to new issues within a reasonable time, but there is
+**no guaranteed SLA**.
 
-## Reporting Vulnerabilities
+## Developer support
 
-If you believe you’ve found a security vulnerability:
-- open a GitHub issue
-- prefix the title with “SECURITY:”
-- mark it private if sensitive details are included
-
-Maintainers will triage per project policy.
-
-## Developer Support
-
-Developers may:
-- fork the repo
-- submit pull requests
+Developers can:
+- fork the repository and submit pull requests (see [CONTRIBUTING.md](CONTRIBUTING.md))
 - comment on issues with design questions
