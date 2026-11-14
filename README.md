@@ -133,10 +133,12 @@ folder.
 git submodule update --init
 ```
 
-Java:
+Java: `mvn clean package` runs the tests when `test-data` is checked out,
+and skips them when it isn't. To make a missing submodule fail the build
+instead, add `-DskipTests=false`.
 
 ```sh
-mvn -DskipTests=false clean package
+mvn clean package
 ```
 
 C++:

@@ -26,7 +26,7 @@ commits that aren't signed off can't be merged.
 
 1. Initialize the test data: `git submodule update --init`
 2. Build and test the Java implementation:
-   `mvn -DskipTests=false clean package`
+   `mvn clean package`
 3. Build and test the C++ implementation: `cd cpp && make check`
 4. Add tests for the change you're making.
 

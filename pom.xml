@@ -5,15 +5,14 @@
 
 	<groupId>org.openmainframeproject.tersedecompress</groupId>
 	<artifactId>tersedecompress</artifactId>
-	<version>5.0.1</version>
+	<version>5.1.0</version>
 	<packaging>jar</packaging>
 
 	<name>tersedecompress</name>
-	<url>https://github.com/openmainframeproject/tersedecompress-testdata</url>
+	<url>https://github.com/openmainframeproject/tersedecompress</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<skipTests>true</skipTests>	
 	</properties>
 	<build>
 		<finalName>tersedecompress</finalName>
@@ -97,4 +96,18 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<profiles>
+		<!-- The tests need the test-data submodule; skip them when it isn't checked out. -->
+		<profile>
+			<id>no-test-data</id>
+			<activation>
+				<file>
+					<missing>${basedir}/test-data/TERSED</missing>
+				</file>
+			</activation>
+			<properties>
+				<skipTests>true</skipTests>
+			</properties>
+		</profile>
+	</profiles>
 </project>
