@@ -17,13 +17,6 @@ int main(int argc, char *argv[])
     parser.showHelp();
     return 0;
   }
-  if ((parser.hasFlag("-b") == true && parser.getOutputFile().empty()))
-  {
-    std::cerr << "Error: Output filename must be given in binary mode.\n";
-    parser.showHelp();
-    return 1;
-  }
-
   std::cout << "Input file: " << parser.getInputFile() << "\n";
   std::cout << "Output file: " << parser.getOutputFile() << "\n";
   std::cout << "Mode:   " << (parser.hasFlag("-b") ? "Binary" : "Text") << std::endl;

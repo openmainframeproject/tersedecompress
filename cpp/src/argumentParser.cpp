@@ -81,6 +81,12 @@ void ArgumentParser::parseArguments(int argc, char **argv)
   {
     return;
   }
+  // A z/OS data set name such as //'HLQ.DATA' can't be turned into a valid output name.
+  if (!hasFlag("-h") && inputFile.rfind("//", 0) == 0)
+  {
+    std::cerr << "Error: output_file is required for a data set input.\n";
+    std::exit(1);
+  }
   std::string outputFileExtension = hasFlag("-b") ? ".bin" : ".txt";
   outputFileExtension += hasFlag("-z") ? ".gz" : "";
   outputFile = inputFile + outputFileExtension;

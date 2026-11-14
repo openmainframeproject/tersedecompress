@@ -63,14 +63,12 @@ line-ending characters.
 
 ### Default output file name
 
-If you leave out `<output file>`:
+If you leave out `<output file>`, it defaults to `<input file>.txt` in text
+mode and `<input file>.bin` in binary mode. With `-z`, `.gz` is appended (for
+example, `<input file>.txt.gz`).
 
-| Mode | Java | C++ |
-|---|---|---|
-| Text | `<input file>.txt` | `<input file>.txt` |
-| Binary | `<input file>.bin` | error: an output file is required |
-
-With `-z`, `.gz` is appended (for example, `<input file>.txt.gz`).
+For a z/OS data set input such as `//'HLQ.DATA'`, there is no default: give
+the output file explicitly.
 
 ### Examples
 

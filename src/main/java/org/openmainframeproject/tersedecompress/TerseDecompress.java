@@ -113,6 +113,10 @@ class TerseDecompress {
         if (outputFileName != null) {
             return;
         }
+        if (!isHelpRequested && inputFileName != null && inputFileName.startsWith("//")) {
+            System.err.println("Error: output file is required for a data set input");
+            System.exit(1);
+        }
         String outputFileExtension = textMode ? ".txt" : ".bin";
         outputFileExtension += gzipMode ? ".gz" : "";
         outputFileName = inputFileName + outputFileExtension;

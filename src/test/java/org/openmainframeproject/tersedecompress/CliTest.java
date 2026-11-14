@@ -63,6 +63,13 @@ public class CliTest {
         assertNotEquals(0, run(input.toString(), output.toString()).exitValue());
     }
 
+    @Test public void dataSetInputRequiresOutputName() throws Exception {
+        for (String input : List.of("//'MY.DATA.SET'", "//MY.DATA.SET")) {
+            assertEquals(1, run(input).exitValue());
+            assertEquals(1, run("-b", input).exitValue());
+        }
+    }
+
     @Test public void missingInputPreservesExistingOutput() throws Exception {
         Path output = temporary.newFile().toPath();
         byte[] original = {1, 2, 3};
