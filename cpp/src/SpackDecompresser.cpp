@@ -55,6 +55,10 @@ void SpackDecompresser::putChars(int X)
   {
     while (X > CODESIZE)
     {
+      if (stack_.Head >= STACKSIZE)
+      {
+        throw std::runtime_error("SPACK decode error: tree too deep, file corrupted?");
+      }
       stack_.Head++;
       stack_.Data[stack_.Head] = tree_[X].Right;
       X = tree_[X].Left;

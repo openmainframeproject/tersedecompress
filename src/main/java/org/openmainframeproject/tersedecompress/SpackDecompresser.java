@@ -24,6 +24,9 @@ class SpackDecompresser extends TerseDecompresser {
 
         while (true) {
             while (X > Constants.CODESIZE) {
+                if (Stack.Head >= Constants.STACKSIZE) {
+                    throw new IOException("SPACK decode error: tree too deep, file corrupted?");
+                }
                 Stack.Head++;
                 Stack.Data[Stack.Head] = Tree[X].Right;
                 X = Tree[X].Left;
