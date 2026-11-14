@@ -16,7 +16,9 @@ abstract class TerseDecompresser implements AutoCloseable
 	DataOutputStream stream;
     final TerseHeader header;
     final boolean TextFlag;
-    
+    /* variable: maximum record length; fixed and native: length that ends a record */
+    final int recordLimit;
+
     public abstract void decode() throws IOException;
     
     public static TerseDecompresser create(InputStream inputStream, OutputStream outputStream, boolean textMode) throws IOException
@@ -34,13 +36,15 @@ abstract class TerseDecompresser implements AutoCloseable
 	public TerseDecompresser(InputStream instream, OutputStream outputStream, TerseHeader header, boolean textMode)
 	{		
 		this.header = header;
-		this.TextFlag = textMode;
+		// Native mode files have no host records: never convert them, and write them out in chunks.
+		boolean nativeMode = header.VersionFlag == 0x01;
+		this.TextFlag = textMode && !nativeMode;
+		this.recordLimit = header.VariableFlag || nativeMode ? Constants.MAXRECORD : header.RecordLength;
 		this.input = new TerseBlockReader(instream);
 		this.stream = new DataOutputStream(new BufferedOutputStream(outputStream));
-		
-        // Reserve enough space for the record buffer to avoid reallocations.
-        // For variable-length records, we can have up to 32767 bytes.
-		this.record = ByteBuffer.allocate(header.VariableFlag ? 32767 : (header.RecordLength * 2));
+
+		// Don't trust a huge record length from the header: start small and grow as needed.
+		this.record = ByteBuffer.allocate(Math.min(recordLimit, Constants.MAXRECORD));
 	}
 	
     /* Write a new line to the output file*/
@@ -53,10 +57,10 @@ abstract class TerseDecompresser implements AutoCloseable
     		int rdw = recordlength << 16;
     		stream.writeInt(rdw);
     	}
-        if (TextFlag) {
-            record.put((byte)0x0A);
-        }
         stream.write(record.array(), 0, record.position());
+        if (TextFlag) {
+            stream.writeByte(0x0A);
+        }
         record.clear();
     }
 
@@ -67,26 +71,37 @@ abstract class TerseDecompresser implements AutoCloseable
     public void PutChar(int X) throws IOException {
         if (X == 0 && TextFlag && header.VariableFlag == true) {
             endRecord();
-        } else if (X == Constants.RECORDMARK && header.VariableFlag == true) {
-            endRecord();
+        } else if (X == Constants.RECORDMARK) {
+            if (header.VariableFlag) {
+                endRecord();
+            }
         } else {
-            if (record.capacity() == record.position()) {
+            if (X < 1 || X > 256) {
+                throw new IOException("Invalid literal in decompressed record");
+            }
+            if (record.position() >= recordLimit) {
                 throw new IOException("Record size exceeds expected maximum. File may be corrupted or not a valid Terse file.");
             }
+            if (record.position() == record.capacity()) {
+                ByteBuffer larger = ByteBuffer.allocate((int) Math.min(recordLimit, 2L * record.capacity()));
+                record.flip();
+                record = larger.put(record);
+            }
             record.put(TextFlag ? (byte) Constants.EbcToAsc[X - 1] : (byte) (X - 1));
-            if (header.VariableFlag != true && (int) (record.position()) == header.RecordLength) {
+            if (header.VariableFlag != true && record.position() == recordLimit) {
                 endRecord();
             }
         }
     }
 
 	@Override
-	public void close() throws Exception {
-		if (record.position() > 0 || TextFlag && header.VariableFlag)
-		{
-			endRecord();
-		}
-		this.stream.close();
-		this.input.close();
+	public void close() throws IOException {
+        TerseBlockReader reader = this.input;
+        DataOutputStream output = this.stream;
+        try (reader; output) {
+            if (record.position() > 0 || TextFlag && header.VariableFlag) {
+                endRecord();
+            }
+        }
 	}
 }

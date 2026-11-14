@@ -59,6 +59,7 @@ class TerseHeader {
             {
                 throw new IOException("Invalid header validation flags");
             }
+            header.RecordLength = header.RecordLen1;
             break;
             
         case 0x02: // PACK (12-byte header)
@@ -85,7 +86,7 @@ class TerseHeader {
             
             }
             
-       		header.SpackFlag = (header.VersionFlag == 0x05);
+            header.SpackFlag = (header.VersionFlag == 0x05 || header.VersionFlag == 0x09);
         	
             if (header.RecordLen1 == 0 && header.RecordLen2 == 0)
             	throw new IOException("Record length is 0");

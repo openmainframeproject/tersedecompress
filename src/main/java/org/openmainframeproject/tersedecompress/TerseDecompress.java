@@ -70,19 +70,14 @@ class TerseDecompress {
     	if (args.length == 0 || inputFileName == null || isHelpRequested == true) {
             printUsageAndExit();
         }
-        OutputStream outputStream = new FileOutputStream(outputFileName);
-        if (gzipMode == true) {
-            outputStream = new GZIPOutputStream(outputStream);
-        }
-        
         System.out.println(
                 "Decompressing input file '" + inputFileName + "' to output file '" + outputFileName + "'");
-        try (TerseDecompresser outputWriter = TerseDecompresser.create(new FileInputStream(inputFileName), outputStream, textMode)) {
+        try (InputStream inputStream = new FileInputStream(inputFileName);
+             OutputStream fileStream = new FileOutputStream(outputFileName);
+             OutputStream outputStream = gzipMode ? new GZIPOutputStream(fileStream) : fileStream;
+             TerseDecompresser outputWriter = TerseDecompresser.create(inputStream, outputStream, textMode)) {
 	        outputWriter.decode();
         }
-		catch (Exception e) {
-			System.out.println("Something went wrong, Exception: '" + e.getMessage() + "'");
-		}
 		
         System.out.println("Processing completed");
     }
@@ -122,10 +117,13 @@ class TerseDecompress {
         outputFileExtension += gzipMode ? ".gz" : "";
         outputFileName = inputFileName + outputFileExtension;
     }
-    public static void main (String args[]) throws Exception {
-
-        TerseDecompress tersed = new TerseDecompress();
-        tersed.process(args);
+    public static void main (String args[]) {
+        try {
+            new TerseDecompress().process(args);
+        } catch (Exception e) {
+            System.err.println("Decompression failed: " + (e.getMessage() != null ? e.getMessage() : e));
+            System.exit(1);
+        }
     }
 
 }
