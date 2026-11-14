@@ -22,10 +22,10 @@ INSTALL_CMD_BIN:=cp
 CC:=ibm-clang
 CXX:=ibm-clang++
 LD:=ibm-clang++
-CXXFLAGS +=-m32 -mzos-float-kind=ieee -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_POSIX_SOURCE -D_POSIX_THREADS \
+CXXFLAGS +=-m64 -mzos-float-kind=ieee -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_POSIX_SOURCE -D_POSIX_THREADS \
 	-D_OPEN_SYS_SOCK_IPV6=1 -D_XOPEN_SOURCE_EXTENDED=1 -DOE_SOCKETS -D_OPEN_SYS_IF_EXT=1
-LDFLAGS +=-m32
-LIBS +=/lib/libzzX.x
+LDFLAGS +=-m64
+LIBS +=/lib/libzz.a
 endif
 
 GIT_TAG := $(shell git rev-parse --short HEAD)

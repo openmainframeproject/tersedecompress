@@ -2,6 +2,7 @@
 #define TERSE_CONSTANTS_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace Tersedecompress
@@ -10,6 +11,7 @@ namespace Tersedecompress
   static constexpr int HASHSIZE = 0x0FFF;   // 4095 (not directly used in decode)
   static constexpr int TREESIZE = 0x1000;   // 4096
   static constexpr int RECORDMARK = 257;    // used in putChar logic
+  static constexpr std::size_t MAXRECORD = 32767; // longest variable record; chunk size for native mode
   static constexpr char ENDOFFILE = 0;      // used to indicate EOF in blockReader
   static constexpr int BASE = 0;
   static constexpr int CODESIZE = 257; // 256 codepoints + EOF/recordmark

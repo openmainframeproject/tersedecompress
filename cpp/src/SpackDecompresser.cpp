@@ -141,6 +141,7 @@ void SpackDecompresser::decode()
   int H = blockReader_->getBlok();
   if (H == Tersedecompress::ENDOFFILE)
   {
+    close();
     return;
   }
   putChars(H);

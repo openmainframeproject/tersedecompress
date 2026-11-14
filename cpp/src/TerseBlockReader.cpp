@@ -12,6 +12,10 @@ int TerseBlockReader::getBlok()
     char byte1 = 0;
     if (!input_.get(byte1))
     {
+      if (input_.bad() || !input_.eof())
+      {
+        throw std::runtime_error("Failed to read TERSE input");
+      }
       return Tersedecompress::ENDOFFILE;
     }
     unsigned char b1 = static_cast< unsigned char >(byte1);
@@ -45,6 +49,10 @@ int TerseBlockReader::getBlok()
     char byte2 = 0;
     if (!input_.get(byte2))
     {
+      if (input_.bad() || !input_.eof())
+      {
+        throw std::runtime_error("Failed to read TERSE input");
+      }
       // We have leftover 4 bits, but no new byte => assume this is EOF,
       // meaning the leftover bits were "padding". Return ENDOF_FILE.
       return Tersedecompress::ENDOFFILE;

@@ -29,9 +29,11 @@ protected:
   TerseDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header, const DecompresserOptions &options);
   void putChar(int x);
   void endRecord();
+  void writeBytes(const char *data, size_t size);
   void close();
   const TerseHeader header_;
   const DecompresserOptions options_;
+  const size_t recordLimit_;
   z_stream *zlibStream ;
   char *zlibBuffer ;
   char *zlibBufferCursor ;

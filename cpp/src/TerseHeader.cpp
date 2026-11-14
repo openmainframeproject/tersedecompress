@@ -138,7 +138,7 @@ TerseHeader TerseHeader::parseHeader(std::istream &in)
                             (static_cast< uint32_t >(static_cast< unsigned char >(buf[3])));
       }
 
-      header.spackFlag = (header.versionFlag == 0x05);
+      header.spackFlag = (header.versionFlag == 0x05 || header.versionFlag == 0x09);
       if (header.recordLen1 == 0 && header.recordLen2 == 0)
       {
         throw std::runtime_error("Record length is 0");

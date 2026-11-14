@@ -3,6 +3,7 @@
 #include "NonSpackDecompresser.h"
 #include "SpackDecompresser.h"
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -37,21 +38,28 @@ TerseDecompresser::~TerseDecompresser()
 }
 
 TerseDecompresser::TerseDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header, const DecompresserOptions &options)
-    : header_(header), options_(options), zlibStream(nullptr), zlibBuffer(nullptr),
+    // Native mode files have no host records: never convert them, and write them out in chunks.
+    : header_(header), options_{options.textMode && header.versionFlag != 0x01, options.gzipMode},
+      recordLimit_(header.variableFlag || header.versionFlag == 0x01 ? Tersedecompress::MAXRECORD
+                                                                     : header.recordLength),
+      zlibStream(nullptr), zlibBuffer(nullptr),
       zlibBufferCursor(nullptr), zlibBufferSize(128 * 1024), inputStream_(in), outputStream_(out)
 {
   blockReader_ = std::make_unique< TerseBlockReader >(inputStream_);
-  // Reserve enough space for the record buffer to avoid reallocations.
-  // For variable-length records, we can have up to 32767 bytes.
-  record_.reserve(header_.variableFlag ? 32767 : (header_.recordLength * 2));
+  // Reserve the record buffer up front, but don't trust a huge record length from the header.
+  record_.reserve(std::min(recordLimit_, Tersedecompress::MAXRECORD));
   if (options_.gzipMode)
   {
-    zlibBuffer = new char[zlibBufferSize];
-    zlibBufferCursor = zlibBuffer;
-    zlibStream = new z_stream();
-    std::memset(zlibStream, 0, sizeof(z_stream));
+    auto buffer = std::make_unique< char[] >(zlibBufferSize);
+    auto stream = std::make_unique< z_stream >();
     // 15 | 16 = 31 for gzip header and trailer
-    deflateInit2(zlibStream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
+    if (deflateInit2(stream.get(), Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+    {
+      throw std::runtime_error("Unable to initialize gzip compression");
+    }
+    zlibBuffer = buffer.release();
+    zlibBufferCursor = zlibBuffer;
+    zlibStream = stream.release();
   }
 }
 
@@ -61,19 +69,26 @@ void TerseDecompresser::putChar(int x)
   {
       endRecord();
   }
-  else if (x == Tersedecompress::RECORDMARK && header_.variableFlag == true)
+  else if (x == Tersedecompress::RECORDMARK)
   {
-    endRecord();
+    if (header_.variableFlag)
+    {
+      endRecord();
+    }
   }
   else
   {
-    if (record_.capacity() == record_.size())
+    if (x < 1 || x > 256)
+    {
+      throw std::runtime_error("Invalid literal in decompressed record");
+    }
+    if (record_.size() >= recordLimit_)
     {
       throw std::runtime_error("Record size exceeds expected maximum. File may be corrupted or not a valid Terse file.");
     }
     record_.push_back(options_.textMode ? static_cast< char >(Tersedecompress::EbcToAsc[x - 1])
                                         : static_cast< char >(x - 1));
-    if (header_.variableFlag != true && static_cast< int >(record_.size()) == header_.recordLength)
+    if (header_.variableFlag != true && record_.size() == recordLimit_)
     {
       endRecord();
     }
@@ -95,25 +110,34 @@ void TerseDecompresser::endRecord()
     rdw[1] = static_cast< unsigned char >(lengthWithRDW & 0xFF);        // low-order length byte
     rdw[2] = 0x00;
     rdw[3] = 0x00;
-    outputStream_.write(reinterpret_cast< const char * >(rdw), 4);
+    writeBytes(reinterpret_cast< const char * >(rdw), 4);
   }
+  writeBytes(record_.data(), record_.size());
   if (options_.textMode)
   {
-    record_.push_back(0x0A);
+    writeBytes("\n", 1);
   }
-  if (record_.empty())
+  record_.clear();
+}
+
+void TerseDecompresser::writeBytes(const char *data, size_t size)
+{
+  if (size == 0)
   {
     return;
   }
   if (zlibStream != nullptr)
   {
-    zlibStream->avail_in = static_cast< uInt >(record_.size());
-    zlibStream->next_in = reinterpret_cast< Bytef * >(record_.data());
+    zlibStream->avail_in = static_cast< uInt >(size);
+    zlibStream->next_in = reinterpret_cast< Bytef * >(const_cast< char * >(data));
     do
     {
       zlibStream->avail_out = static_cast< uInt >(zlibBufferSize - (zlibBufferCursor - zlibBuffer));
       zlibStream->next_out = reinterpret_cast< Bytef * >(zlibBufferCursor);
-      deflate(zlibStream, Z_NO_FLUSH);
+      if (deflate(zlibStream, Z_NO_FLUSH) != Z_OK)
+      {
+        throw std::runtime_error("Gzip compression failed");
+      }
       if (zlibStream->avail_out == 0)
       {
         outputStream_.write(zlibBuffer, zlibBufferSize);
@@ -123,13 +147,16 @@ void TerseDecompresser::endRecord()
       {
         zlibBufferCursor += (zlibBufferSize - (zlibBufferCursor - zlibBuffer)) - zlibStream->avail_out;
       }
-    } while (zlibStream->avail_out == 0);
+    } while (zlibStream->avail_in != 0);
   }
   else
   {
-    outputStream_.write(record_.data(), record_.size());
+    outputStream_.write(data, size);
   }
-  record_.clear();
+  if (!outputStream_)
+  {
+    throw std::runtime_error("Unable to write decompressed output");
+  }
 }
 
 void TerseDecompresser::close() 
@@ -142,12 +169,17 @@ void TerseDecompresser::close()
   {
     zlibStream->avail_in = 0;
     zlibStream->next_in = nullptr;
+    int result;
     do
     {
       uInt bufferAvail = static_cast< uInt >(zlibBufferSize - (zlibBufferCursor - zlibBuffer));
       zlibStream->avail_out = bufferAvail;
       zlibStream->next_out = reinterpret_cast< Bytef * >(zlibBufferCursor);
-      deflate(zlibStream, Z_FINISH);
+      result = deflate(zlibStream, Z_FINISH);
+      if (result != Z_OK && result != Z_STREAM_END)
+      {
+        throw std::runtime_error("Unable to finish gzip compression");
+      }
       if (zlibStream->avail_out == 0)
       {
         outputStream_.write(zlibBuffer, zlibBufferSize);
@@ -157,11 +189,15 @@ void TerseDecompresser::close()
       {
         zlibBufferCursor += bufferAvail - zlibStream->avail_out;
       }
-    } while (zlibStream->avail_out == 0);
+    } while (result != Z_STREAM_END);
     if (zlibBufferCursor != zlibBuffer)
     {
       outputStream_.write(zlibBuffer, zlibBufferCursor - zlibBuffer);
     }
   }
   outputStream_.flush();
+  if (!outputStream_)
+  {
+    throw std::runtime_error("Unable to flush decompressed output");
+  }
 }
