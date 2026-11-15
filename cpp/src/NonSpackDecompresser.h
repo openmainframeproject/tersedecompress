@@ -9,8 +9,8 @@
 class NonSpackDecompresser: public TerseDecompresser
 {
 public:
-  NonSpackDecompresser(std::istream &in, std::ostream &out, std::unique_ptr< TerseBlockReader > reader,
-                       const TerseHeader &header);
+  NonSpackDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header, const DecompresserOptions &options);
+  virtual ~NonSpackDecompresser() = default;
   void decode() override;
 };
 

@@ -3,14 +3,10 @@
 
 #include <stdexcept>
 
-SpackDecompresser::SpackDecompresser(std::istream &in, std::ostream &out, std::unique_ptr< TerseBlockReader > reader,
-                                     const TerseHeader &header)
-    : TerseDecompresser(in, out)
+SpackDecompresser::SpackDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header,
+                                     const DecompresserOptions &options)
+    : TerseDecompresser(in, out, header, options)
 {
-  blockReader_ = std::move(reader);
-  hostFlag_ = header.hostFlag;
-  variableFlag_ = header.recfmV;
-  recordLength_ = header.recordLength;
   tree_.resize(Tersedecompress::TREESIZE + 1);
 }
 
@@ -52,6 +48,20 @@ int SpackDecompresser::getTreeNode()
   return node_;
 }
 
+void SpackDecompresser::addNode(int H, int G)
+{
+  int N = getTreeNode();
+  if (N == H || N == G)
+  {
+    throw std::runtime_error("SPACK decode error: tree node refers to itself, file corrupted?");
+  }
+  tree_[N].Left = H;
+  tree_[N].Right = G;
+  bumpRef(H);
+  bumpRef(G);
+  lruAdd(N);
+}
+
 void SpackDecompresser::putChars(int X)
 {
   stack_.Head = 0;
@@ -59,6 +69,10 @@ void SpackDecompresser::putChars(int X)
   {
     while (X > CODESIZE)
     {
+      if (stack_.Head >= STACKSIZE)
+      {
+        throw std::runtime_error("SPACK decode error: tree too deep, file corrupted?");
+      }
       stack_.Head++;
       stack_.Data[stack_.Head] = tree_[X].Right;
       X = tree_[X].Left;
@@ -145,6 +159,7 @@ void SpackDecompresser::decode()
   int H = blockReader_->getBlok();
   if (H == Tersedecompress::ENDOFFILE)
   {
+    close();
     return;
   }
   putChars(H);
@@ -156,12 +171,7 @@ void SpackDecompresser::decode()
       lruKill();
     }
     putChars(G);
-    int N = getTreeNode();
-    tree_[N].Left = H;
-    tree_[N].Right = G;
-    bumpRef(H);
-    bumpRef(G);
-    lruAdd(N);
+    addNode(H, G);
     H = G;
     G = blockReader_->getBlok();
   }

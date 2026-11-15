@@ -2,6 +2,7 @@
 #define TERSE_CONSTANTS_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace Tersedecompress
@@ -10,11 +11,13 @@ namespace Tersedecompress
   static constexpr int HASHSIZE = 0x0FFF;   // 4095 (not directly used in decode)
   static constexpr int TREESIZE = 0x1000;   // 4096
   static constexpr int RECORDMARK = 257;    // used in putChar logic
+  static constexpr char LINEFEED = 0x0A;    // ASCII LF ending text records, on every platform
+  static constexpr std::size_t MAXRECORD = 32767; // longest variable record; chunk size for native mode
   static constexpr char ENDOFFILE = 0;      // used to indicate EOF in blockReader
   static constexpr int BASE = 0;
   static constexpr int CODESIZE = 257; // 256 codepoints + EOF/recordmark
 
-  static constexpr std::array< int, 256 > EbcToAsc = {
+  static constexpr std::array< unsigned char, 256 > EbcToAsc = {
       0x00, 0x01, 0x02, 0x03, 0xCF, 0x09, 0xD3, 0x7F, 0xD4, 0xD5, 0xC3, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
       0xC7, 0xB4, 0x08, 0xC9, 0x18, 0x19, 0xCC, 0xCD, 0x83, 0x1D, 0xD2, 0x1F, 0x81, 0x82, 0x1C, 0x84, 0x86, 0x0A, 0x17, 0x1B,
       0x89, 0x91, 0x92, 0x95, 0xA2, 0x05, 0x06, 0x07, 0xE0, 0xEE, 0x16, 0xE5, 0xD0, 0x1E, 0xEA, 0x04, 0x8A, 0xF6, 0xC6, 0xC2,

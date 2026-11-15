@@ -10,20 +10,15 @@ import java.io.IOException;
 class TerseHeader {
 
     public int VersionFlag;
-    public int VariableFlag;
+    public boolean VariableFlag;
     public int RecordLen1;
     public int Flags;
     public int Ratio;
     public int BlockSize;
     public int  RecordLen2;
 
-    public int  RecordLength;
-    
-    public boolean RecfmV = false;
-    
+    public int  RecordLength;   
     /*Defaults for dump types*/
-    boolean TextFlag = true;
-    boolean HostFlag = true;
     boolean SpackFlag = true;
 
     public String toString() {
@@ -54,7 +49,6 @@ class TerseHeader {
         
         switch (header.VersionFlag) {
         case 0x01: /* native binary mode, 4 byte header, versions 1.2+ */
-        case 0x07: /* native binary mode, 4 byte header, versions 1.1- */
         	
             int byte2 = datastream.readUnsignedByte();
             int byte3 = datastream.readUnsignedByte();
@@ -65,15 +59,18 @@ class TerseHeader {
             {
                 throw new IOException("Invalid header validation flags");
             }
-        	header.HostFlag = false; /* autoswitch to native mode */
-        	header.TextFlag = false;
-
+            header.RecordLength = header.RecordLen1;
             break;
             
-        case 0x02: /* host  PACK compatibility mode, 12 byte header */
-        case 0x05: /* host SPACK compatibility mode, 12 byte header */
+        case 0x02: // PACK (12-byte header)
+        case 0x05: // SPACK (12-byte header)
+        case 0x07: // PACK (12-byte header), PDS or PDSE
+        case 0x09: // SPACK (12-byte header), PDS or PDSE
         	
-            header.VariableFlag = datastream.readUnsignedByte();
+            int VariableFlagByte = datastream.readUnsignedByte();
+            if ((VariableFlagByte != 0x00) && (VariableFlagByte != 0x01))
+            	throw new IOException("Record format flag not recognized : " + Integer.toHexString(VariableFlagByte));
+            header.VariableFlag = VariableFlagByte == 0x01;
             header.RecordLen1 = datastream.readUnsignedShort();
             header.Flags = datastream.readUnsignedByte();
             header.Ratio = datastream.readUnsignedByte();
@@ -89,11 +86,8 @@ class TerseHeader {
             
             }
             
-       		header.SpackFlag = (header.VersionFlag == 0x05);
+            header.SpackFlag = (header.VersionFlag == 0x05 || header.VersionFlag == 0x09);
         	
-            if ((header.VariableFlag != 0x00) && (header.VariableFlag != 0x01))
-            	throw new IOException("Record format flag not recognized : " + Integer.toHexString(header.VariableFlag));
-            
             if (header.RecordLen1 == 0 && header.RecordLen2 == 0)
             	throw new IOException("Record length is 0");
             
@@ -101,19 +95,13 @@ class TerseHeader {
             		&& header.RecordLen1 != header.RecordLen2)
             	throw new IOException("Ambiguous record length");
             
-            header.RecordLength = header.RecordLen1 != 0 ? header.RecordLen1 : header.RecordLen2;
-            
-            header.RecfmV = (header.VariableFlag == 0x01);
-            
+            header.RecordLength = header.RecordLen1 != 0 ? header.RecordLen1 : header.RecordLen2;            
             // Preserve checks from previous version, I don't know why these cases are invalid 
             if ((header.Flags & Constants.FLAGMVS) == 0) {
                 if (    header.Flags != 0) throw new IOException("Flags specified for non-MVS");
                 if (    header.Ratio != 0) throw new IOException("Ratio specified for non-MVS");
                 if (header.BlockSize != 0) throw new IOException("BlockSize specified for non-MVS");
             }
-            
-        	header.HostFlag = true;
-
             break;
         default:
             throw new IOException("Terse header version not recognized : " + Integer.toHexString(header.VersionFlag));

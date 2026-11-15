@@ -3,11 +3,9 @@
 
 #include <cstring>
 
-static std::string test_data_path = "./";
-
 TestHelpers *TestHelpers::inst = nullptr;
 
-void TestHelpers::DecompressAndVerify(const std::string &file, const std::string &ext, bool textMode)
+void TestHelpers::DecompressAndVerify(const std::string &file, const std::string &ext, bool textMode, bool gzipMode)
 {
   std::string tersed = test_data_path + "TERSED/" + file + "." + ext;
   std::string untersed = test_data_path + (textMode ? "ZOSTEXT/" : "ZOSBINARY/") + file;
@@ -22,10 +20,31 @@ void TestHelpers::DecompressAndVerify(const std::string &file, const std::string
     throw std::runtime_error("Could not open file: " + untersed);
   }
   std::stringstream output(std::ios::in | std::ios::out | std::ios::binary);
-
-  auto decomp = TerseDecompresser::create(tersedStream, output);
-  decomp->setTextFlag(textMode);
+  DecompresserOptions options;
+  options.textMode = textMode;
+  options.gzipMode = gzipMode;
+  auto decomp = TerseDecompresser::create(tersedStream, output, options);
   decomp->decode();
+
+  if (gzipMode)
+  {
+    const std::string compressed = output.str();
+    expectedStream.seekg(0, std::ios::end);
+    std::vector< char > inflated(static_cast< size_t >(expectedStream.tellg()) + 1);
+    z_stream stream{};
+    ASSERT_EQ(inflateInit2(&stream, 15 + 16), Z_OK);
+    stream.next_in = reinterpret_cast< Bytef * >(const_cast< char * >(compressed.data()));
+    stream.avail_in = static_cast< uInt >(compressed.size());
+    stream.next_out = reinterpret_cast< Bytef * >(inflated.data());
+    stream.avail_out = static_cast< uInt >(inflated.size());
+    const int result = inflate(&stream, Z_FINISH);
+    const size_t inflatedSize = stream.total_out;
+    const uInt remaining = stream.avail_in;
+    inflateEnd(&stream);
+    ASSERT_EQ(result, Z_STREAM_END) << "Invalid gzip output for " << tersed;
+    ASSERT_EQ(remaining, 0U) << "Trailing bytes after gzip stream";
+    output.str(std::string(inflated.data(), inflatedSize));
+  }
 
   output.seekg(0, std::ios::end);
   expectedStream.seekg(0, std::ios::end);
@@ -48,10 +67,6 @@ void TestHelpers::DecompressAndVerify(const std::string &file, const std::string
     bufferB[expectedStream.gcount()] = '\0';
     ASSERT_EQ(output.gcount(), expectedStream.gcount()) << "Mismatch for actual read of " << tersed << "\nExpected size "
                                                         << expectedStream.gcount() << " untersed size " << output.gcount();
-    if (std::memcmp(bufferA.data(), bufferB.data(), output.gcount()) != 0)
-    {
-      std::cout << "Mismatch for " << tersed;
-    }
 
     ASSERT_EQ(std::memcmp(bufferA.data(), bufferB.data(), output.gcount()), 0)
         << "Contents differ for " << file << " current position " << output.tellp();

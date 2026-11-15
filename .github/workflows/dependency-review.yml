@@ -1,0 +1,25 @@
+# Software composition analysis (SCA) for pull requests: fails if a pull
+# request adds a dependency with a known high or critical vulnerability
+# (including advisories for malicious packages) or a license not on the list
+# below. See SECURITY.md.
+
+name: Dependency review
+
+on:
+  pull_request:
+    branches: [ "master", "release-*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: high
+        allow-licenses: >-
+          Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Zlib,
+          EPL-1.0, EPL-2.0, LGPL-2.1-only, LGPL-2.1-or-later

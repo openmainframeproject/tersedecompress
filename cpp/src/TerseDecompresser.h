@@ -4,28 +4,40 @@
 #include "TerseBlockReader.h"
 #include "TerseHeader.h"
 
+#include <zlib.h>
+
 #include <istream>
 #include <memory>
 #include <ostream>
 #include <vector>
 
+struct DecompresserOptions
+{
+  bool textMode = true;
+  bool gzipMode = false;
+};
+
 class TerseDecompresser
 {
 public:
-  static std::unique_ptr< TerseDecompresser > create(std::istream &inputStream, std::ostream &outputStream);
-  virtual ~TerseDecompresser() = default;
+  static std::unique_ptr< TerseDecompresser > create(std::istream &inputStream, std::ostream &outputStream,
+                                                     const DecompresserOptions &options);
+  virtual ~TerseDecompresser();
   virtual void decode() = 0;
-  void setTextFlag(bool flag) { textMode_ = flag; }
 
 protected:
-  TerseDecompresser(std::istream &in, std::ostream &out): inputStream_(in), outputStream_(out) {}
+  TerseDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header, const DecompresserOptions &options);
   void putChar(int x);
   void endRecord();
+  void writeBytes(const char *data, size_t size);
   void close();
-  bool hostFlag_ = false;     // HostFlag (header-based)
-  bool variableFlag_ = false; // RecfmV (header-based)
-  bool textMode_ = false;     // from user arg (-b vs. default)
-  int recordLength_ = 0;       // from the TerseHeader
+  const TerseHeader header_;
+  const DecompresserOptions options_;
+  const size_t recordLimit_;
+  z_stream *zlibStream ;
+  char *zlibBuffer ;
+  char *zlibBufferCursor ;
+  uInt zlibBufferSize;
   std::vector< char > record_; // buffer for the current record
   std::istream &inputStream_;
   std::ostream &outputStream_;

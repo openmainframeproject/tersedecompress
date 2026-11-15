@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-TerseHeader TerseHeader::checkHeader(std::istream &in)
+TerseHeader TerseHeader::parseHeader(std::istream &in)
 {
   TerseHeader header;
 
@@ -20,7 +20,7 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
   switch (header.versionFlag)
   {
     case 0x01: // native binary mode (4-byte header, versions 1.2+)
-    case 0x07: // native binary mode (4-byte header, versions 1.1-)
+    // case 0x07: // native binary mode (4-byte header, versions 1.1-)
     {
       // read next 3 bytes => validate 0x89, 0x69, 0xA5
       uint8_t b2, b3, b4;
@@ -65,18 +65,14 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
       {
         throw std::runtime_error("Invalid header validation flags in native binary mode");
       }
-
-      // hostFlag = false, textFlag = false
-      header.hostFlag = false;
-      header.textFlag = false;
-
       // recordLength = recordLen1
       header.recordLength = header.recordLen1;
       break;
     }
-
-    case 0x02: // host PACK (12-byte header)
-    case 0x05: // host SPACK (12-byte header)
+    case 0x02: // PACK (12-byte header)
+    case 0x05: // SPACK (12-byte header)
+    case 0x07: // PACK (12-byte header), PDS or PDSE
+    case 0x09: // SPACK (12-byte header), PDS or PDSE
     {
       // variableFlag (1 byte)
       {
@@ -85,7 +81,11 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
         {
           throw std::runtime_error("EOF reading variableFlag");
         }
-        header.variableFlag = static_cast< uint8_t >(temp);
+        if (temp != 0x00 && temp != 0x01)
+        {
+          throw std::runtime_error("Record format flag not recognized: " + std::to_string(temp));
+        }
+        header.variableFlag = temp == 0x01;
       }
       // recordLen1 (2 bytes)
       {
@@ -138,14 +138,7 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
                             (static_cast< uint32_t >(static_cast< unsigned char >(buf[3])));
       }
 
-      header.spackFlag = (header.versionFlag == 0x05);
-
-      // check variableFlag
-      if (header.variableFlag != 0x00 && header.variableFlag != 0x01)
-      {
-        throw std::runtime_error("Record format flag not recognized: " + std::to_string(header.variableFlag));
-      }
-
+      header.spackFlag = (header.versionFlag == 0x05 || header.versionFlag == 0x09);
       if (header.recordLen1 == 0 && header.recordLen2 == 0)
       {
         throw std::runtime_error("Record length is 0");
@@ -154,10 +147,7 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
       {
         throw std::runtime_error("Ambiguous record length (recordLen1 != recordLen2)");
       }
-
       header.recordLength = (header.recordLen1 != 0) ? header.recordLen1 : header.recordLen2;
-      header.recfmV = (header.variableFlag == 0x01);
-
       // if ((flags & 0x04) == 0) => must have no ratio, no blockSize, no flags
       if ((header.flags & 0x04) == 0)
       {
@@ -174,9 +164,6 @@ TerseHeader TerseHeader::checkHeader(std::istream &in)
           throw std::runtime_error("BlockSize specified for non-MVS must be 0");
         }
       }
-
-      header.hostFlag = true; // host-based
-      // textFlag remains true by default
       break;
     }
     default: {

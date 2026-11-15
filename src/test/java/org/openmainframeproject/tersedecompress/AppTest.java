@@ -154,11 +154,12 @@ public class AppTest
 		String untersed = location + "/ZOSBINARY/" + file;
 		
 		byte[] expected = Files.readAllBytes(Paths.get(untersed));
+		System.out.println("Binary: " + packSpack + " " + file  + " size=" + expected.length);
 		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		
         try (TerseDecompresser outputWriter 
-        		= TerseDecompresser.create(new FileInputStream(tersed), out))
+        		= TerseDecompresser.create(new FileInputStream(tersed), out, false))
         {
         	outputWriter.decode();
         }
@@ -174,13 +175,13 @@ public class AppTest
 		// i.e. the data was checked out in text mode with git crlf conversion or otherwise
 		// converted.
 		byte[] expected = Files.readAllBytes(Paths.get(untersed));
+		System.out.println("Text  : " + packSpack + " " + file  + " size=" + expected.length);
 		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		
         try (TerseDecompresser outputWriter 
-        		= TerseDecompresser.create(new FileInputStream(tersed), out))
+        		= TerseDecompresser.create(new FileInputStream(tersed), out, true))
         {
-        	outputWriter.TextFlag = true;
         	outputWriter.decode();
         }
 		assertArrayEquals(file, expected, out.toByteArray());

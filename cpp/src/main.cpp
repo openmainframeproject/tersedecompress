@@ -12,13 +12,11 @@ int main(int argc, char *argv[])
 {
   ArgumentParser parser(argc, argv);
 
-  if (parser.hasFlag("-h") || (parser.hasFlag("-b") == true && parser.getOutputFile().empty()))
+  if (parser.hasFlag("-h") )
   {
-    std::cout << "Output filename must be given in binary mode.\n";
     parser.showHelp();
     return 0;
   }
-
   std::cout << "Input file: " << parser.getInputFile() << "\n";
   std::cout << "Output file: " << parser.getOutputFile() << "\n";
   std::cout << "Mode:   " << (parser.hasFlag("-b") ? "Binary" : "Text") << std::endl;
@@ -38,8 +36,10 @@ int main(int argc, char *argv[])
 
   try
   {
-    auto decompresser = TerseDecompresser::create(inStream, outStream);
-    decompresser->setTextFlag(parser.hasFlag("-b") == false);
+    DecompresserOptions options;
+    options.textMode = !parser.hasFlag("-b");
+    options.gzipMode = parser.hasFlag("-z");
+    auto decompresser = TerseDecompresser::create(inStream, outStream, options);
     std::cout << "Decompressing...\n";
     decompresser->decode();
   }

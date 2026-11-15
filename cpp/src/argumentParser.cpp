@@ -25,11 +25,12 @@ void ArgumentParser::showHelp() const
   std::cout << "Options:\n";
   std::cout << "  -h           Show this help message.\n";
   std::cout << "  -b           Enable binary mode (no EBCDIC->ASCII conversion).\n";
+  std::cout << "  -z           Enable gzip compression for the output file.\n";
   std::cout << "Arguments:\n";
   std::cout << "  input_file   Path to the input file (required).\n";
   std::cout << "  output_file  Path to the output file (optional).\n";
   std::cout << "               In text mode, output_file defaults to <input file>.txt.\n";
-  std::cout << "Version: 5.0.1, commit " << GIT_TAG << "\n";
+  std::cout << "Version: 5.1, commit " << GIT_TAG << "\n";
 }
 
 std::string ArgumentParser::getInputFile() const { return inputFile; }
@@ -49,6 +50,10 @@ void ArgumentParser::parseArguments(int argc, char **argv)
     else if (args[i] == "-b")
     {
       flags["-b"] = true;
+    }
+    else if (args[i] == "-z")
+    {
+      flags["-z"] = true;
     }
     else if (inputFile.empty())
     {
@@ -72,9 +77,17 @@ void ArgumentParser::parseArguments(int argc, char **argv)
     showHelp();
     std::exit(1);
   }
-  // If we have input but no output and we're in text mode => default output = input + ".txt"
-  if (hasFlag("-b") != true && outputFile.empty())
+  if (outputFile.empty() != true)
   {
-    outputFile = inputFile + ".txt";
+    return;
   }
+  // A z/OS data set name such as //'HLQ.DATA' can't be turned into a valid output name.
+  if (!hasFlag("-h") && inputFile.rfind("//", 0) == 0)
+  {
+    std::cerr << "Error: output_file is required for a data set input.\n";
+    std::exit(1);
+  }
+  std::string outputFileExtension = hasFlag("-b") ? ".bin" : ".txt";
+  outputFileExtension += hasFlag("-z") ? ".gz" : "";
+  outputFile = inputFile + outputFileExtension;
 }

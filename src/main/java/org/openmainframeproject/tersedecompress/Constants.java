@@ -119,6 +119,7 @@ class Constants {
     static final int  HASHSIZE = 0x0FFF;      /* 4k - 1 */
     static final int  TREESIZE = 0x1000;      /* 4k     */
     static final int  RECORDMARK = 257;       /*used in the file output functions*/
+    static final int  MAXRECORD = 32767;      /*longest variable record; chunk size for native mode*/
 
     /*
     Some Used in the unspack algorithm. I guess tuning affects the

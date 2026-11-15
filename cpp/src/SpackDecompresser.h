@@ -9,14 +9,16 @@
 class SpackDecompresser: public TerseDecompresser
 {
 public:
-  SpackDecompresser(std::istream &in, std::ostream &out, std::unique_ptr< TerseBlockReader > reader,
-                    const TerseHeader &header);
+  SpackDecompresser(std::istream &in, std::ostream &out, const TerseHeader &header, const DecompresserOptions &options);
+  virtual ~SpackDecompresser() = default;
   void decode() override;
 
 private:
+  friend struct SpackDecompresserTestAccess;
   void putChars(int x);
   void treeInit();
   int getTreeNode();
+  void addNode(int H, int G);
   void bumpRef(int bref);
   void lruKill();
   void deleteRef(int dref);

@@ -1,0 +1,30 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master", "release-*" ]
+  pull_request:
+    branches: [ "master", "release-*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends clang libgtest-dev zlib1g-dev
+    - name: make
+      working-directory: cpp
+      run: make
+    - name: make check
+      working-directory: cpp
+      run: make check

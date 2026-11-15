@@ -1,0 +1,48 @@
+# Static application security testing (SAST) for both implementations.
+# Findings appear under Security > Code scanning. A repository ruleset blocks
+# merging pull requests that add high or critical findings. See SECURITY.md.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [ "master", "release-*" ]
+  pull_request:
+    branches: [ "master", "release-*" ]
+  schedule:
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: java-kotlin
+          build-mode: none
+        - language: c-cpp
+          build-mode: manual
+    steps:
+    - uses: actions/checkout@v4
+    - uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        queries: security-extended
+    - name: Build C++
+      if: matrix.build-mode == 'manual'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends clang zlib1g-dev
+        make -C cpp
+    - uses: github/codeql-action/analyze@v4
+      with:
+        category: /language:${{ matrix.language }}
