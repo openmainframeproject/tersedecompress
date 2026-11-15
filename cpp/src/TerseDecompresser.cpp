@@ -115,7 +115,7 @@ void TerseDecompresser::endRecord()
   writeBytes(record_.data(), record_.size());
   if (options_.textMode)
   {
-    writeBytes("\n", 1);
+    writeBytes(&Tersedecompress::LINEFEED, 1);
   }
   record_.clear();
 }

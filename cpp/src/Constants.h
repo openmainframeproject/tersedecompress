@@ -11,6 +11,7 @@ namespace Tersedecompress
   static constexpr int HASHSIZE = 0x0FFF;   // 4095 (not directly used in decode)
   static constexpr int TREESIZE = 0x1000;   // 4096
   static constexpr int RECORDMARK = 257;    // used in putChar logic
+  static constexpr char LINEFEED = 0x0A;    // ASCII LF ending text records, on every platform
   static constexpr std::size_t MAXRECORD = 32767; // longest variable record; chunk size for native mode
   static constexpr char ENDOFFILE = 0;      // used to indicate EOF in blockReader
   static constexpr int BASE = 0;

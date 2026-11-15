@@ -112,7 +112,7 @@ TEST(RecordTests, FullVariableTextRecordsHaveRoomForNewlines)
   auto decoder = TerseDecompresser::create(input, output, DecompresserOptions{});
   decoder->decode();
   std::string expected(2 * 32768 + 1, '\0');
-  expected[32767] = expected[65535] = expected[65536] = '\n';
+  expected[32767] = expected[65535] = expected[65536] = Tersedecompress::LINEFEED;
   EXPECT_EQ(output.str(), expected);
 }
 
@@ -128,6 +128,8 @@ TEST(RecordTests, FixedRecordMarksDoNotBecomeBytes)
 {
   // SPACK header, record mark (257), literal (1), and end marker (0).
   const char data[] = {5, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 16, 16, 1, 0, 0};
+  const std::string expectedText{'\0', Tersedecompress::LINEFEED};
+  const std::string expectedBinary(1, '\0');
   for (bool textMode : {false, true})
   {
     std::istringstream input(std::string(data, sizeof(data)));
@@ -136,6 +138,6 @@ TEST(RecordTests, FixedRecordMarksDoNotBecomeBytes)
     options.textMode = textMode;
     auto decoder = TerseDecompresser::create(input, output, options);
     decoder->decode();
-    EXPECT_EQ(output.str(), textMode ? std::string("\0\n", 2) : std::string("\0", 1));
+    EXPECT_EQ(output.str(), textMode ? expectedText : expectedBinary);
   }
 }
