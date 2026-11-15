@@ -23,7 +23,7 @@ The committer role enables the contributor to commit code directly to the reposi
 * Show your experience with the codebase through contributions and engagement on the community channels.
 * Request to become a committer.
 * Have the majority of committers approve you becoming a committer.
-* Your name and email is added to the COMMITTERS.md file for the project.
+* You are added to the tersedecompress-committers team listed in COMMITTERS.md.
 
 ### Committer responsibilities
 

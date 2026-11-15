@@ -19,13 +19,13 @@ Both decode the same formats and produce the same output.
 - PACK and SPACK compressed files
 - Fixed (F/FB) and variable (V/VB) record formats
 - Sequential data sets and PDS/PDSE
-- Native binary mode files (4-byte header)
+- Native binary mode files
 
 ## Install
 
 Each [GitHub release](https://github.com/openmainframeproject/tersedecompress/releases)
-includes a prebuilt `tersedecompress.jar`, and C++ binaries for some platforms.
-To build from source, see [Build](#build).
+includes a prebuilt `tersedecompress.jar`, C++ binaries for some platforms,
+and the release notes for that version. To build from source, see [Build](#build).
 
 ## Usage
 
@@ -69,6 +69,16 @@ example, `<input file>.txt.gz`).
 
 For a z/OS data set input such as `//'HLQ.DATA'`, there is no default: give
 the output file explicitly.
+
+### Exit status
+
+| Status | Meaning |
+|---|---|
+| 0 | Success, or help or version printed |
+| 1 | Error: the input can't be read, the output can't be written, the input is not a valid TERSE file, or a data set input has no output name |
+
+With no arguments, Java prints usage and exits 0, while C++ prints an error
+and exits 1.
 
 ### Examples
 
@@ -148,28 +158,6 @@ make check
 
 Code-quality tooling (compiler warnings, SpotBugs, cppcheck) is described in
 [QUALITY.md](QUALITY.md).
-
-## Version history
-
-**Version 5.1 (in development)**
-
-- `-z` option to write gzip-compressed output (Java and C++)
-- Fix for large input files in binary mode; records longer than the maximum
-  record length are now reported as errors
-- C++ CI on GitHub Actions
-- Compiler warnings and static analysis (see [QUALITY.md](QUALITY.md))
-
-**Version 5.0.1: July 2023 to September 2025**
-
-- Maven compiles with Java 21
-- In text mode, the output file name is optional and defaults to `<input file>.txt`
-- Added the C++ implementation
-- Added the commit id to the version
-
-**Version 5: March 2021**
-
-- Support for variable-length binary records, prefixed with an RDW (see
-  [Options](#options))
 
 ## Help and contributing
 
