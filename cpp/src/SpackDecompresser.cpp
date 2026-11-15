@@ -48,6 +48,20 @@ int SpackDecompresser::getTreeNode()
   return node_;
 }
 
+void SpackDecompresser::addNode(int H, int G)
+{
+  int N = getTreeNode();
+  if (N == H || N == G)
+  {
+    throw std::runtime_error("SPACK decode error: tree node refers to itself, file corrupted?");
+  }
+  tree_[N].Left = H;
+  tree_[N].Right = G;
+  bumpRef(H);
+  bumpRef(G);
+  lruAdd(N);
+}
+
 void SpackDecompresser::putChars(int X)
 {
   stack_.Head = 0;
@@ -157,12 +171,7 @@ void SpackDecompresser::decode()
       lruKill();
     }
     putChars(G);
-    int N = getTreeNode();
-    tree_[N].Left = H;
-    tree_[N].Right = G;
-    bumpRef(H);
-    bumpRef(G);
-    lruAdd(N);
+    addNode(H, G);
     H = G;
     G = blockReader_->getBlok();
   }

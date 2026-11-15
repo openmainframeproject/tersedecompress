@@ -13,13 +13,13 @@ class SpackDecompresser extends TerseDecompresser {
 	
     private int node =0;
 
-    private int TreeAvail;
+    int TreeAvail;
 
-    private TreeRecord Tree[] = new TreeRecord[Constants.TREESIZE+1];
+    TreeRecord Tree[] = new TreeRecord[Constants.TREESIZE+1];
 
     StackType Stack = new StackType();
 
-    private void PutChars(int X) throws IOException {
+    void PutChars(int X) throws IOException {
         Stack.Head = 0;
 
         while (true) {
@@ -46,7 +46,7 @@ class SpackDecompresser extends TerseDecompresser {
 
     }
     
-    private void TreeInit() {
+    void TreeInit() {
 
         for (int i =0; i < Tree.length; i ++) {
             Tree[i] = new TreeRecord();
@@ -77,6 +77,18 @@ class SpackDecompresser extends TerseDecompresser {
         return node;
     }
 
+
+    void AddNode(int H, int G) throws IOException {
+        int N = GetTreeNode();
+        if (N == H || N == G) {
+            throw new IOException("SPACK decode error: tree node refers to itself, file corrupted?");
+        }
+        Tree[N].Left = H;
+        Tree[N].Right = G;
+        BumpRef(H);
+        BumpRef(G);
+        LruAdd(N);
+    }
 
     private int forwards = 0, prev = 0;
 
@@ -140,7 +152,7 @@ class SpackDecompresser extends TerseDecompresser {
     public void decode() throws IOException {
               
         TreeAvail = 0;
-        int N = 0, G = 0, H = 0;
+        int G = 0, H = 0;
        
         TreeInit();
         Tree[Constants.TREESIZE-1].NextCount = Constants.NONE;
@@ -179,12 +191,7 @@ class SpackDecompresser extends TerseDecompresser {
 	            }
 	        	
                 PutChars(G);
-	            N = GetTreeNode();
-	            Tree[N].Left = H;
-	            Tree[N].Right = G;
-	            BumpRef(H);
-	            BumpRef(G);
-	            LruAdd(N);
+	            AddNode(H, G);
 	            H = G;
 	            G = input.GetBlok();	    
 	        }

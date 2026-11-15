@@ -14,9 +14,11 @@ public:
   void decode() override;
 
 private:
+  friend struct SpackDecompresserTestAccess;
   void putChars(int x);
   void treeInit();
   int getTreeNode();
+  void addNode(int H, int G);
   void bumpRef(int bref);
   void lruKill();
   void deleteRef(int dref);
