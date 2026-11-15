@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    target-branch: release-5.1
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: release-5.1
+    schedule:
+      interval: weekly

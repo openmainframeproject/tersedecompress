@@ -24,8 +24,10 @@ Both decode the same formats and produce the same output.
 ## Install
 
 Each [GitHub release](https://github.com/openmainframeproject/tersedecompress/releases)
-includes a prebuilt `tersedecompress.jar`, C++ binaries for some platforms,
-and the release notes for that version. To build from source, see [Build](#build).
+includes a prebuilt jar (`tersedecompress-X.Y.Z.jar`), C++ binaries for
+Linux and macOS, an SBOM for each of them, checksums and the release notes.
+Every file is signed: see [Verify a release](RELEASE.md#verify-a-release).
+To build from source, see [Build](#build).
 
 ## Usage
 
@@ -165,6 +167,7 @@ Code-quality tooling (compiler warnings, SpotBugs, cppcheck) is described in
 - Security vulnerabilities: see [SECURITY.md](SECURITY.md). Don't report them in public issues.
 - Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md)
 - Project governance: see [GOVERNANCE.md](GOVERNANCE.md) and [COMMITTERS.md](COMMITTERS.md)
+- Design and security assessment: see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## License
 

@@ -111,3 +111,7 @@ basis.  There is no SLA or guarantee that:
 
 Contributors are encouraged to check the output of these tools before
 submitting a PR and to address warnings where practical.
+
+The exception is findings that could be security weaknesses: they must be
+fixed or recorded as false positives before a release. See
+[SECURITY.md](SECURITY.md#dependency-and-code-scanning).

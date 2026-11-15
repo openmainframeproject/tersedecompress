@@ -1,0 +1,173 @@
+# Builds the release artifacts for a release_X.Y.Z tag, signs them with
+# GitHub artifact attestations (Sigstore), and creates a draft GitHub Release.
+# A maintainer adds the release notes and publishes it. See RELEASE.md.
+
+name: Release
+
+on:
+  push:
+    tags: [ "release_*" ]
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  java:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Check version
+      run: |
+        POM_VERSION=$(mvn -q -B help:evaluate -Dexpression=project.version -DforceStdout)
+        if [ "release_$POM_VERSION" != "$TAG" ]; then
+          echo "::error::Tag $TAG doesn't match pom.xml version $POM_VERSION"
+          exit 1
+        fi
+    - name: Build and test
+      run: mvn -B -DskipTests=false clean package
+    - name: SBOM
+      run: >
+        mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
+        -DoutputFormat=json -DoutputName=bom
+    - name: Package
+      run: |
+        VERSION=${TAG#release_}
+        mkdir dist
+        cp target/tersedecompress.jar "dist/tersedecompress-$VERSION.jar"
+        cp target/bom.json "dist/tersedecompress-$VERSION.jar.cdx.json"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: java
+        path: dist/*
+        if-no-files-found: error
+
+  cpp-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends clang libgtest-dev zlib1g-dev
+    - name: Build and test
+      working-directory: cpp
+      run: |
+        make
+        make check
+    - name: Package
+      run: |
+        VERSION=${TAG#release_}
+        NAME="tersedecompress++-$VERSION-linux-x86_64"
+        ZLIB_VERSION=$(dpkg-query -W -f='${Version}' zlib1g)
+        mkdir dist
+        tar -czf "dist/$NAME.tar.gz" -C cpp/bin tersedecompress++
+        cat > "dist/$NAME.tar.gz.cdx.json" <<EOF
+        {
+          "bomFormat": "CycloneDX",
+          "specVersion": "1.5",
+          "version": 1,
+          "metadata": {
+            "component": {
+              "type": "application",
+              "name": "tersedecompress++",
+              "version": "$VERSION"
+            }
+          },
+          "components": [
+            {
+              "type": "library",
+              "name": "zlib1g",
+              "version": "$ZLIB_VERSION",
+              "purl": "pkg:deb/ubuntu/zlib1g@$ZLIB_VERSION",
+              "licenses": [ { "license": { "id": "Zlib" } } ],
+              "scope": "required"
+            }
+          ]
+        }
+        EOF
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cpp-linux
+        path: dist/*
+        if-no-files-found: error
+
+  cpp-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: cpp
+      run: make
+    - name: Package
+      run: |
+        VERSION=${TAG#release_}
+        NAME="tersedecompress++-$VERSION-macos-arm64"
+        mkdir dist
+        tar -czf "dist/$NAME.tar.gz" -C cpp/bin tersedecompress++
+        cat > "dist/$NAME.tar.gz.cdx.json" <<EOF
+        {
+          "bomFormat": "CycloneDX",
+          "specVersion": "1.5",
+          "version": 1,
+          "metadata": {
+            "component": {
+              "type": "application",
+              "name": "tersedecompress++",
+              "version": "$VERSION"
+            }
+          },
+          "components": [
+            {
+              "type": "library",
+              "name": "zlib",
+              "description": "zlib provided by macOS",
+              "licenses": [ { "license": { "id": "Zlib" } } ],
+              "scope": "required"
+            }
+          ]
+        }
+        EOF
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cpp-macos
+        path: dist/*
+        if-no-files-found: error
+
+  release:
+    needs: [ java, cpp-linux, cpp-macos ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create the draft release
+      id-token: write      # sign attestations with Sigstore
+      attestations: write  # store attestations
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        merge-multiple: true
+    - name: Checksums
+      working-directory: dist
+      run: sha256sum * > "tersedecompress-${TAG#release_}.sha256"
+    - name: Sign build provenance
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: dist/*
+    - name: Create draft release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: >
+        gh release create "$TAG" dist/*
+        --repo "$GITHUB_REPOSITORY" --verify-tag --draft --title "$TAG"
+        --notes "Release notes to be added by a maintainer before publishing."
