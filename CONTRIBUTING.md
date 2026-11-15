@@ -33,6 +33,14 @@ commits that aren't signed off can't be merged.
 CI runs both test suites on every pull request. See [README.md](README.md)
 for the build requirements.
 
+## Test policy
+
+New features and bug fixes must include automated tests that cover them,
+in the Java suite (`src/test`), the C++ suite (`cpp/tests`), or both if
+both implementations change. A fix for a decoding bug should include a
+regression test that fails without the fix. Reviewers will ask for tests
+before merging a pull request that changes behaviour.
+
 ## Keep both implementations in sync
 
 The Java and C++ implementations should behave the same way. If you fix a
